@@ -1,0 +1,6 @@
+venv/*
+
+backend/documents/*
+backend/.env
+
+frontend/.streamlit/secrets.toml

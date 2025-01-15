@@ -1,0 +1,40 @@
+import os
+import pytz
+from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.dialects.postgresql import ARRAY
+from .database import Base
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from dotenv import load_dotenv
+
+# Especifica la ruta al archivo .env
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../.env')
+load_dotenv(dotenv_path)
+
+# Ahora puedes acceder a las variables de entorno
+TIME_ZONE = os.getenv('TIME_ZONE')
+
+class Document(Base):
+    __tablename__ = "documents"  # Nombre de la tabla en la base de datos
+
+    id = Column(Integer, primary_key=True, autoincrement=True)  # Identificador único del documento
+    name = Column(String, nullable=False)  # Nombre del archivo/documento
+    collection_name = Column(String, nullable=False)  # Colección o categoría del documento
+    path = Column(String, nullable=False)  # Ruta del archivo del documento
+    created_at = Column(DateTime, default=lambda: datetime.now(pytz.timezone(TIME_ZONE)))
+    updated_at = Column(DateTime, default=lambda: datetime.now(pytz.timezone(TIME_ZONE)))
+    embeddings_uuids = Column(ARRAY(String), default=list)
+
+    # Relación con el modelo RequestedDocument
+    requests = relationship(
+        "RequestedDocument", 
+        back_populates="document", 
+        cascade="all, delete-orphan", 
+        overlaps="document_ref"
+    )
+
+    metric_associations = relationship("MetricAssociation", back_populates="document")
+
+
+    def __repr__(self):
+        return f"<Document(id={self.id}, name={self.name}, collection_name={self.collection_name}, created_at={self.created_at}, embeddings_uuids={self.embeddings_uuids})>"
