@@ -1,27 +1,19 @@
 import streamlit as st
 from modules.log_in.cache_data.load_data import load_user
 from modules.log_in.config_data.config_data import handle_logout
+from modules.settings.utils.load_theme_extra_config import load_theme_extra_config
+
+theme_extra_config = load_theme_extra_config()
 
 NOMBRE_ASISTENTE = st.secrets.get("NOMBRE_ASISTENTE", "Not found")
 
 def create_menu(username):
-    #!!!!CAMBIA EL WIDTH DEL SIDEBAR
-    # st.markdown(
-    #     """
-    #     <style>
-    #         section[data-testid="stSidebar"] {
-    #             width: 200px !important; # Set the width to your desired value
-    #         }
-    #     </style>
-    #     """,
-    #     unsafe_allow_html=True,
-    # )
     with st.sidebar:
         user_data = load_user(username)
         if user_data:
             full_name = user_data["first_name"] + " " + user_data["last_name"]
 
-            st.write(f"Hola **:blue-background[{full_name.title()}]** ")
+            st.write(f"Hola **:{theme_extra_config['menu_name_color']}-background[{full_name.title()}]** ")
 
             st.page_link('pages/admin.py',label="Inicio", icon=":material/home:")
             st.page_link('pages/profile.py',label="Perfil", icon=":material/account_box:")

@@ -1,0 +1,17 @@
+[color_pages]
+menu_name_color = "blue"
+primary_config_color = "red"
+secondary_config_color = "red"
+primary_docs_color = "blue"
+secondary_docs_color = "blue"
+primary_users_color = "blue"
+secondary_users_color = "blue"
+primary_reports_color = "green"
+secondary_reports_color = "green"
+primary_audit_color = "green"
+secondary_audit_color = "green"
+primary_documentation_color = "orange"
+secondary_documentation_color = "orange"
+primary_assistant_color = "rainbow"
+secondary_assistant_color = "orange"
+

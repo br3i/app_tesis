@@ -3,7 +3,7 @@ import tempfile
 import io
 import urllib
 import requests
-from modules.docs_utils import extract_page_image
+from modules.chat.utils.extract_page_image import extract_page_image
 
 BACKEND_URL = st.secrets.get("BACKEND_URL", "Not Found")
 

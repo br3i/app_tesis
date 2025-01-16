@@ -2,11 +2,11 @@ import streamlit as st
 import ollama
 import json
 import requests
-#from subprocess import Popen
 from modules.chat.utils.ollama_generator import ollama_generator
 from modules.chat.utils.remove_words import remove_word
 from modules.chat.visuals.show_chat_component import model_selector, show_sources
 from modules.chat.visuals.show_messages import handle_user_input, display_history, get_limited_history, add_message
+from modules.settings.utils.load_theme_extra_config import load_theme_extra_config
 
 BACKEND_URL = st.secrets.get("BACKEND_URL", "Not Found")
 MODEL_LLM_BASE = st.secrets.get("MODEL_LLM_BASE", "Not Found")
@@ -14,7 +14,9 @@ MODEL_EMBEDDING = st.secrets.get("MODEL_EMBEDDING", "Not Found")
 MAX_HISTORY_SIZE = st.secrets.get("MAX_HISTORY_SIZE", "Not Found")
 NOMBRE_ASISTENTE = st.secrets.get("NOMBRE_ASISTENTE", "Not Found")
 
-st.title(f'Bienvenido a :orange[{NOMBRE_ASISTENTE}]')
+theme_extra_config = load_theme_extra_config()
+
+st.title(f'Bienvenido a :{theme_extra_config["primary_assistant_color"]}[{NOMBRE_ASISTENTE}]')
 
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = MODEL_LLM_BASE
