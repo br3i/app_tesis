@@ -107,7 +107,7 @@ def show_sources(sources):
                     page_img = extract_page_image(temp_document_path, resolve_page)
                     col1, col2, col3 = st.columns([0.15, 0.7, 0.15])
                     with col2:
-                        st.image(page_img, caption=f"Página {resolve_page} del documento", width=500)
+                        st.image(page_img, caption=f"Página {resolve_page} del documento", use_container_width=True)
                         st.markdown(f"[:gray-background[Documento Completo]]({document_url})") 
                 else:
                     st.error("No se pudo descargar el archivo PDF.")

@@ -2,13 +2,15 @@ import streamlit as st
 import ollama
 import json
 import requests
-from modules.chat.utils.ollama_generator import ollama_generator
+import websocket
+from modules.chat.utils.message_generator import message_generator
 from modules.chat.utils.remove_words import remove_word
 from modules.chat.visuals.show_chat_component import model_selector, show_sources
 from modules.chat.visuals.show_messages import handle_user_input, display_history, get_limited_history, add_message
 from modules.settings.utils.load_theme_extra_config import load_theme_extra_config
 
 BACKEND_URL = st.secrets.get("BACKEND_URL", "Not Found")
+BACKEND_WS_URL = st.secrets.get("BACKEND_WS_URL", "Not Found")
 MODEL_LLM_BASE = st.secrets.get("MODEL_LLM_BASE", "Not Found")
 MODEL_EMBEDDING = st.secrets.get("MODEL_EMBEDDING", "Not Found")
 MAX_HISTORY_SIZE = st.secrets.get("MAX_HISTORY_SIZE", "Not Found")
@@ -95,6 +97,7 @@ else:
 
 st.header("Haga una pregunta sobre el PDF")
 placeholder_info = st.empty()
+placeholder_error = st.empty()
 placeholder_waring = st.empty()
 display_history()
 
@@ -141,7 +144,7 @@ if query:
     # Limitar el historial para la generación del modelo
     limited_history = get_limited_history(MAX_HISTORY_SIZE)
 
-    # Determinamos qué versión de 'sources' enviar a ollama_generator
+    # Determinamos qué versión de 'sources'
     if st.session_state.use_consideratons:
         sources_to_send = original_sources  # Enviamos la versión original si 'use_consideratons' es True
     else:
@@ -150,28 +153,34 @@ if query:
     if st.session_state.use_history:
         history_to_send = limited_history
     else:
-        history_to_send = ["Historial no disponible"]
+        history_to_send = [{'role': 'assistant', 'content': 'Historial no disponible'}]
 
     # Llamar a la función de generación con el historial limitado
     with st.chat_message("assistant"):
         print("\n\n------------ULTIMA VEZ DE CONTEXTO---------------")
         print(context)
         print("\n\n\n\n")
-        message_placeholder = st.empty()  # Crear placeholder DENTRO del chat_message
-        full_response = ""
-        with st.spinner("Generando respuesta..."): #Spinner opcional
-            for chunk in ollama_generator(
-                st.session_state.selected_model,
-                history_to_send,
-                query,
-                context,
-                sources_to_send
-            ):
-                full_response += chunk
-                message_placeholder.markdown(full_response + " ▌")
+        try:
+            # Establecer conexión con el WebSocket
+            ws = websocket.create_connection(BACKEND_WS_URL)
+            if ws.connected:
+                message_data = {
+                    "query": query,
+                    "model_name": st.session_state.selected_model,
+                    "history_messages": history_to_send,
+                    "context": context,
+                    "sources": sources_to_send,
+                }
+                # Enviar un mensaje inicial
+                ws.send(json.dumps(message_data))
 
-        message_placeholder.markdown(full_response)
+                # Recibir y mostrar respuestas del WebSocket
+                with st.spinner("Generando respuesta..."):
+                    full_response = st.write_stream(message_generator(ws))
+            else:
+                placeholder_waring.warning("WebSocket connection failes")
+        except Exception as e:
+            placeholder_error.error("Failed to establish a WebSocket connection: " + str(e))
     add_message("assistant", full_response)
-
 else:
     placeholder_info.info(":material/info: Por favor, introduce una consulta.")

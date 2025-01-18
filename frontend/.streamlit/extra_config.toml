@@ -12,6 +12,6 @@ primary_audit_color = "green"
 secondary_audit_color = "green"
 primary_documentation_color = "orange"
 secondary_documentation_color = "orange"
-primary_assistant_color = "rainbow"
+primary_assistant_color = "orange"
 secondary_assistant_color = "orange"
 
