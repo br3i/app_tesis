@@ -81,22 +81,22 @@ def model_selector(models_ollama):
 def show_sources(sources):
     # Comprobar si existen fuentes
     if sources:
-        print(f"[\n\n\nUSER_UTILS]: {sources}\n\n\n")
+        # print(f"[\n\n\show_chat_component]: {sources}\n\n\n")
         # Mostrar el número de fuentes encontradas en el mensaje de estado
         with st.status(f"Obteniendo fuentes. Encontradas: {len(sources)}"):
             for source in sources:
                 # Decodificar el nombre del archivo para mostrarlo correctamente
                 # readable_file_path = urllib.parse.unquote(source.get("file_path", "Desconocido"))
                 readable_document_name = urllib.parse.unquote(source.get("document_name", "Desconocido"))
-                print(f"[\n\n\nUSER_UTILS]readable_file_path: {readable_document_name}\n\n\n")
+                # print(f"[\n\n\nUSER_UTILS]readable_file_path: {readable_document_name}\n\n\n")
                 resolve_page = int(source.get("resolve_page", "Desconocido"))
                 st.markdown(f"- :violet[Documento]: {readable_document_name} | :orange[Página]: {resolve_page}")
                 
                 # Codificar el nombre del archivo para usarlo en la URL
                 encoded_document_name = urllib.parse.quote(readable_document_name, "Desconocido")
-                print(f"[\n\n\nUSER_UTILS]encoded_document_name: {encoded_document_name}\n\n\n")
+                # print(f"[\n\n\nUSER_UTILS]encoded_document_name: {encoded_document_name}\n\n\n")
                 document_url = f"{BACKEND_URL}/document/{encoded_document_name}.pdf"
-                print(f"[\n\n\nUSER_UTILS]document_url: {document_url}\n\n")
+                # print(f"[\n\n\nUSER_UTILS]document_url: {document_url}\n\n")
                 document_response = requests.get(document_url)
 
                 if document_response.status_code == 200:

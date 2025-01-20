@@ -7,7 +7,7 @@ from services.nr_database.nr_connection_service import get_collection_names
 from services.embeddings.get_embedding_service import get_embeddings
 
 def get_context_sources(query: str, word_list, n_documents):
-    print(f"\n\n--------------[contex_sources_service] Iniciando búsqueda con query: {query}")
+    # print(f"\n\n--------------[contex_sources_service] Iniciando búsqueda con query: {query}")
     # print(f"[context_sources_service] Número de documentos a buscar: {n_documents}")
     # print(f"[context_sources_service] n_documents type: {type(n_documents)}")
     n_documents = int(n_documents)
@@ -84,7 +84,7 @@ def get_context_sources(query: str, word_list, n_documents):
                 where_document=full_text_filters,
                 include=["documents", "metadatas"]
             )
-            print(f"\nRESULTS\n\n------[contex_sources_service] Resultado de search_results {search_results}")
+            # print(f"\nRESULTS\n\n------[contex_sources_service] Resultado de search_results {search_results}")
             
             # Verificar si 'documents' contiene resultados y procesarlos
             if 'documents' in search_results and search_results['documents']:

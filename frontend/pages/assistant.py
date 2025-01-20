@@ -3,9 +3,12 @@ import ollama
 import json
 import requests
 import websocket
+import uuid
+from streamlit_feedback import streamlit_feedback
 from modules.chat.utils.message_generator import message_generator
 from modules.chat.utils.remove_words import remove_word
 from modules.chat.visuals.show_chat_component import model_selector, show_sources
+from modules.chat.utils.random_placeholder import get_placeholder_manager
 from modules.chat.visuals.show_messages import handle_user_input, display_history, get_limited_history, add_message
 from modules.settings.utils.load_theme_extra_config import load_theme_extra_config
 
@@ -18,22 +21,32 @@ NOMBRE_ASISTENTE = st.secrets.get("NOMBRE_ASISTENTE", "Not Found")
 
 theme_extra_config = load_theme_extra_config()
 
+st.write(st.session_state)
+st.write(1)
+
 st.title(f'Bienvenido a :{theme_extra_config["primary_assistant_color"]}[{NOMBRE_ASISTENTE}]')
 
+if "user_session_uuid" not in st.session_state:
+    st.session_state.user_session_uuid = str(uuid.uuid4())
+#!!!!!!!!!!! ARREGLAR LOGICA CUANDO SE CAMBIA VARIAS VECES
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = MODEL_LLM_BASE
-if "use_consideratons" not in st.session_state:
-    st.session_state.use_consideratons = False
+#!!!!!!!!!!!
+if "random_placeholder_generated" not in st.session_state:
+    random_placeholder = get_placeholder_manager()
+    st.session_state.random_placeholder_generated = random_placeholder.get_next_placeholder()
 if "history_messages" not in st.session_state:
     st.session_state.history_messages = []
-if "use_history" not in st.session_state:
-    st.session_state.use_history = False
+if "use_considerations" not in st.session_state:
+    st.session_state.use_considerations = False
 if "n_documents" not in st.session_state:
     st.session_state.n_documents = 4
 if "word_list" not in st.session_state:
     st.session_state.word_list = []
+if "list_interaction_uuid" not in st.session_state:
+    st.session_state.list_interaction_uuid = []
 
-on_llm = st.toggle("Seleccionar LLM")
+on_llm = st.toggle("Seleccionar LLM", help=f"Modelo seleccionado: {st.session_state.selected_model}")
 if on_llm:
     model_selector(ollama.list())
 
@@ -42,15 +55,9 @@ if on_advance:
     with st.sidebar:
         on_considerations = st.toggle("Usar Consideraciones")
         if on_considerations:
-            st.session_state.use_consideratons = True
+            st.session_state.use_considerations = True
         else:
-            st.session_state.use_consideratons = False
-        
-        on_history = st.toggle("Usar historial")
-        if on_history:
-            st.session_state.use_history = True
-        else:
-            st.session_state.use_history = False
+            st.session_state.use_considerations = False
 
         on_n_docs = st.toggle("Numero de documentos")
         if on_n_docs:
@@ -90,8 +97,7 @@ if on_advance:
         else:
             st.session_state.word_list = []
 else:
-    st.session_state.use_consideratons = False
-    st.session_state.use_history = False
+    st.session_state.use_considerations = False
     st.session_state.n_documents = 4
     st.session_state.word_list = []
 
@@ -102,85 +108,125 @@ placeholder_waring = st.empty()
 display_history()
 
 # Recibir la entrada del usuario
-query = st.chat_input("Introduce tu consulta sobre el documento PDF")
+query = st.chat_input(f"{st.session_state.random_placeholder_generated}")
+st.write(2)
+
+try:
+    last_interaction_uuid = st.session_state["list_interaction_uuid"][-1]
+    
+    if st.session_state.get(last_interaction_uuid):
+        st.write(f"lo consigue y es: {st.session_state.get(last_interaction_uuid)}")
+
+        if isinstance(st.session_state.get(last_interaction_uuid), dict):
+            for key, value in st.session_state.get(last_interaction_uuid).items():
+                st.write(f"Clave: {key}, Tipo de valor: {type(value), }, Valor: {value}")
+            feedback_data = st.session_state.get(last_interaction_uuid)
+            st.write(feedback_data)
+            #st.write(type(feedback_data))
+
+            json_data={
+                "user_session_uuid": st.session_state.user_session_uuid,
+                "interaction_uuid": last_interaction_uuid,
+                "feedback_type": feedback_data.get("type", ""),
+                "score": feedback_data.get("score", ""),
+                "text": feedback_data.get("text", ""),
+            }
+
+            st.write(json_data)
+            try:
+                response = requests.post(f"{BACKEND_URL}/process_feedback", json=json_data)
+            except Exception as e:
+                print(f"[assitant] error {e}")
+                st.error("Error al conectarse con el servidor...")
+    else:
+        st.write("no hay nada")
+except:
+    last_interaction_uuid = None
+
+# Mostrar el valor
+st.write(f"El último interaction_uuid es: {last_interaction_uuid}")
+st.write(f"Type de interaction_uuid es: {type(last_interaction_uuid)}")
 
 if query:
     handle_user_input(query)
 
     with st.spinner("Buscando información relacionada..."):
         json_data={
+            "user_session_uuid": st.session_state.user_session_uuid,
             "query": query,
+            "use_considerations": st.session_state.use_considerations,
+            "n_documents": st.session_state.n_documents,
             "word_list": st.session_state.word_list,
-            "n_documents": st.session_state.n_documents
         }
-        response = requests.post(f"{BACKEND_URL}/get_context_sources", json=json_data)
+        response = requests.post(f"{BACKEND_URL}/get_sources", json=json_data)
         # Realizar la consulta al backend
 
         if response.status_code == 200:
             result = response.json()
             print("[assistant] result: ", result)
-            context = result.get('context', '')
             sources = result.get('sources', '')
-            print("[assistant] Context:", context)
-            print("[assistant] Context type: ", type(context))
             print("[assistant] Sources:", sources)
             print("[assistant] Sources type: ", type(sources))
+            interaction_uuid = result.get('interaction_uuid', '')
+            print("[assistant] Sources:", interaction_uuid)
+            print("[assistant] Sources type: ", type(interaction_uuid))
             if sources == "":
-                original_sources = ""
                 placeholder_info = st.info(":material/info: No se encontraron fuentes relevantes para tu pregunta")
-            else:
-                original_sources = sources.copy()
-
-            # Si use_consideratons es False, eliminamos 'considerations' de los elementos de sources
-            if st.session_state.use_consideratons == False:
-                for item in sources:
-                    if 'considerations' in item:
-                        del item['considerations']
-
-            if sources:
-                show_sources(original_sources)
-                
-
-    # Limitar el historial para la generación del modelo
-    limited_history = get_limited_history(MAX_HISTORY_SIZE)
-
-    # Determinamos qué versión de 'sources'
-    if st.session_state.use_consideratons:
-        sources_to_send = original_sources  # Enviamos la versión original si 'use_consideratons' es True
-    else:
-        sources_to_send = sources
+            elif sources:
+                show_sources(sources)
+        
+        # if interaction_uuid not in st.session_state:
+        #     print(f"[no encuentra el {interaction_uuid}]")
+        # else:
+        #     print(f"[encuentra el {interaction_uuid}]")
     
-    if st.session_state.use_history:
-        history_to_send = limited_history
-    else:
-        history_to_send = [{'role': 'assistant', 'content': 'Historial no disponible'}]
-
-    # Llamar a la función de generación con el historial limitado
     with st.chat_message("assistant"):
-        print("\n\n------------ULTIMA VEZ DE CONTEXTO---------------")
-        print(context)
-        print("\n\n\n\n")
         try:
             # Establecer conexión con el WebSocket
             ws = websocket.create_connection(BACKEND_WS_URL)
             if ws.connected:
                 message_data = {
-                    "query": query,
+                    "user_session_uuid": st.session_state.user_session_uuid,
+                    "interaction_uuid": interaction_uuid,
                     "model_name": st.session_state.selected_model,
-                    "history_messages": history_to_send,
-                    "context": context,
-                    "sources": sources_to_send,
+                    "history_messages": st.session_state.history_messages,
                 }
                 # Enviar un mensaje inicial
                 ws.send(json.dumps(message_data))
 
-                # Recibir y mostrar respuestas del WebSocket
+                # # Recibir y mostrar respuestas del WebSocket
                 with st.spinner("Generando respuesta..."):
                     full_response = st.write_stream(message_generator(ws))
+                    print("[assistant] tipo de full_response: ", type(full_response))
             else:
                 placeholder_waring.warning("WebSocket connection failes")
         except Exception as e:
-            placeholder_error.error("Failed to establish a WebSocket connection: " + str(e))
+            placeholder_error.error(f"Failed to establish a WebSocket connection: {e}")
     add_message("assistant", full_response)
-else:
-    placeholder_info.info(":material/info: Por favor, introduce una consulta.")
+    
+    json_data={
+        "user_session_uuid": st.session_state.user_session_uuid,
+        "interaction_uuid": interaction_uuid,
+        "full_response": full_response,
+    }
+    
+    requests.post(f"{BACKEND_URL}/add_response", json=json_data)
+
+    feedback = streamlit_feedback(
+            feedback_type="thumbs",
+            key=f"{interaction_uuid}",
+            align="flex-start",
+        )
+    st.session_state.list_interaction_uuid.append(interaction_uuid)
+    
+    
+    st.write(st.session_state)
+
+    if interaction_uuid not in st.session_state:
+        print(f"[no encuentra el {interaction_uuid}]")
+    else:
+        print(f"[encuentra el {interaction_uuid}]")
+
+    placeholder_waring.warning(st.session_state.history_messages)
+# else:
+#     placeholder_info.info(":material/info: Por favor, introduce una consulta.")
