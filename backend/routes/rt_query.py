@@ -29,22 +29,22 @@ session_data = {}
 
 router = APIRouter()
 
-def clean_inactive_sessions():
+def clean_inactive_sessions(user_session_uuid):
     now = datetime.now(pytz.timezone(TIME_ZONE))
     sessions_to_remove = []
 
     # Recorre todas las sesiones
-    for session_uuid, session_data in session_data.items():
-        last_interaction_time = session_data.get("last_interaction_time")
+    for user_session_uuid_key, session_info in session_data.items():  # Cambié el nombre aquí
+        last_interaction_time = session_info.get("last_interaction_time")
         if last_interaction_time:
             inactivity_duration = now - last_interaction_time
             if inactivity_duration > INACTIVITY_LIMIT:
-                sessions_to_remove.append(session_uuid)
+                sessions_to_remove.append(user_session_uuid_key)
 
     # Elimina las sesiones inactivas
-    for session_uuid in sessions_to_remove:
-        print(f"[clean_inactive_sessions] Eliminando sesión inactiva: {session_uuid}")
-        session_data.pop(session_uuid)
+    for user_session_uuid_key in sessions_to_remove:
+        print(f"[clean_inactive_sessions] Eliminando sesión inactiva: {user_session_uuid_key}")
+        session_data.pop(user_session_uuid_key)
 
 # Función para eliminar sesiones antiguas si el límite de sesiones es excedido
 def clean_old_sessions():
@@ -170,7 +170,7 @@ async def context_sources(query_model: QueryModel):
         print(f"[rt_query] Actualizando sesión para el usuario: {user_session_uuid}")
         session_data[user_session_uuid]["last_interaction_time"] = datetime.now(pytz.timezone(TIME_ZONE))
     
-    clean_inactive_sessions()
+    clean_inactive_sessions(user_session_uuid)
     clean_old_sessions()
     clean_old_interactions(user_session_uuid)
 

@@ -80,26 +80,35 @@ def extract_text_from_pages(document_path):
 
 def extract_text_resolve(document_path, start_page):
     """
-    Extrae el texto desde una página específica hasta el final del documento, comenzando en la página especificada,
-    sin buscar ningún patrón específico.
+    Extrae el texto desde una página específica hasta el final del documento, comenzando en la página especificada.
+    Procesa el texto para buscar y remover un patrón específico, almacenando las partes separadamente.
 
     Args:
         document_path (str): Ruta al archivo PDF.
         start_page (int): Número de página desde la cual comenzar a extraer (1-indexed).
 
     Returns:
-        str: El texto completo extraído desde la página especificada hasta el final del documento.
+        str, str: 
+            - full_text: Texto procesado, manteniendo "SECRETARIO GENERAL".
+            - copia: Texto desde "Copia:" dentro de la sección "SECRETARIO GENERAL".
     """
     full_text = ""
+    copia = ""
 
     # Lista de patrones para reemplazar en el texto de cada página
     replace_patterns = [
         (r"[\n\r\f]", " "),  # Reemplazar saltos de línea y otros caracteres de nueva línea por un espacio
-        (r"\s{2,}", " "),     # Reemplazar múltiples espacios por un solo espacio
+        (r"\s{2,}", " "),    # Reemplazar múltiples espacios por un solo espacio
         (r"\…{2,}", "FIRMA"),  # Reemplazar secuencias de puntos suspensivos por "FIRMA"
         (r"^ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL", ""),
         (r"^\s*ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL", "")
     ]
+
+    # Patrón para buscar "SECRETARIO GENERAL" y su contenido hasta "Copia:"
+    section_pattern = r"(SECRETARIO GENERAL.*?Copia:.*)"
+
+    # Subpatrón para extraer desde "Copia:" dentro de la sección encontrada
+    copia_pattern = r"(Copia:.*)"
 
     with open(document_path, "rb") as file:
         reader = PyPDF2.PdfReader(file)
@@ -112,21 +121,27 @@ def extract_text_resolve(document_path, start_page):
         for page_num in range(start_page, len(reader.pages)):
             page = reader.pages[page_num]
             page_text = page.extract_text().strip()
-            #print(f"\n[info_docs_service] Extrayendo texto de la página {page_num + 1}: {repr(page_text)}")
-            #time.sleep(10)
 
             # Aplicar los patrones de reemplazo
             for pattern, replacement in replace_patterns:
-                #print(f"[info_docs_service] Reemplazando con '{replacement}': {pattern}")
                 page_text = re.sub(pattern, replacement, page_text, flags=re.IGNORECASE)
-            #print(f"[info_docs_service] Texto después de reemplazar: {repr(page_text)}")
-            #time.sleep(10)
 
             # Concatenar el texto procesado de cada página
             full_text += page_text
-            #print(f"[info_docs_service] Texto acumulado: {repr(full_text)}")
-            #time.sleep(20)
-    return full_text
+
+    # Buscar la sección completa desde "SECRETARIO GENERAL"
+    section_match = re.search(section_pattern, full_text, flags=re.IGNORECASE)
+    if section_match:
+        section_text = section_match.group(1)  # Extraer desde "SECRETARIO GENERAL"
+        
+        # Dentro de la sección, buscar específicamente "Copia:"
+        copia_match = re.search(copia_pattern, section_text, flags=re.IGNORECASE)
+        if copia_match:
+            copia = copia_match.group(1)  # Extraer desde "Copia:"
+            # Mantener el texto antes de "Copia:" en el full_text
+            full_text = full_text.replace(copia, "").strip()
+
+    return full_text, copia
 
 def extract_text_from_first_page(document_path):
     """
@@ -272,7 +287,7 @@ def get_info_document(document_path):
         #Imprimir la resolución encontrada
         # print("\n[info_docs_service] Resolución encontrada:", resolution)
 
-        text_resolve = extract_text_resolve(document_path, final_page)
+        text_resolve, copia = extract_text_resolve(document_path, final_page)
 
         # print("\n\n\t [info_docs_service] Text_resolve:", text_resolve)
         resolve = get_resolve(text_resolve)
@@ -297,7 +312,7 @@ def get_info_document(document_path):
         #     for i, (article_entity, delimiter) in enumerate(articles_entities):
         #         print(f"{i + 1}: {article_entity.strip()}")
         
-        return resolution, articles_entities, resolve, final_page+1
+        return resolution, articles_entities, copia, resolve, final_page+1
     else:
         print("No se encontro el archivo.")
         return None, None, None, None

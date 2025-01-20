@@ -21,8 +21,8 @@ NOMBRE_ASISTENTE = st.secrets.get("NOMBRE_ASISTENTE", "Not Found")
 
 theme_extra_config = load_theme_extra_config()
 
-st.write(st.session_state)
-st.write(1)
+# st.write(st.session_state)
+# st.write(1)
 
 st.title(f'Bienvenido a :{theme_extra_config["primary_assistant_color"]}[{NOMBRE_ASISTENTE}]')
 
@@ -109,19 +109,19 @@ display_history()
 
 # Recibir la entrada del usuario
 query = st.chat_input(f"{st.session_state.random_placeholder_generated}")
-st.write(2)
+# st.write(2)
 
 try:
     last_interaction_uuid = st.session_state["list_interaction_uuid"][-1]
     
     if st.session_state.get(last_interaction_uuid):
-        st.write(f"lo consigue y es: {st.session_state.get(last_interaction_uuid)}")
+        # st.write(f"lo consigue y es: {st.session_state.get(last_interaction_uuid)}")
 
         if isinstance(st.session_state.get(last_interaction_uuid), dict):
-            for key, value in st.session_state.get(last_interaction_uuid).items():
-                st.write(f"Clave: {key}, Tipo de valor: {type(value), }, Valor: {value}")
+            # for key, value in st.session_state.get(last_interaction_uuid).items():
+            #     st.write(f"Clave: {key}, Tipo de valor: {type(value), }, Valor: {value}")
             feedback_data = st.session_state.get(last_interaction_uuid)
-            st.write(feedback_data)
+            # st.write(feedback_data)
             #st.write(type(feedback_data))
 
             json_data={
@@ -132,20 +132,20 @@ try:
                 "text": feedback_data.get("text", ""),
             }
 
-            st.write(json_data)
+            # st.write(json_data)
             try:
                 response = requests.post(f"{BACKEND_URL}/process_feedback", json=json_data)
             except Exception as e:
                 print(f"[assitant] error {e}")
                 st.error("Error al conectarse con el servidor...")
-    else:
-        st.write("no hay nada")
+    # else:
+    #     st.write("no hay nada")
 except:
     last_interaction_uuid = None
 
 # Mostrar el valor
-st.write(f"El último interaction_uuid es: {last_interaction_uuid}")
-st.write(f"Type de interaction_uuid es: {type(last_interaction_uuid)}")
+# st.write(f"El último interaction_uuid es: {last_interaction_uuid}")
+# st.write(f"Type de interaction_uuid es: {type(last_interaction_uuid)}")
 
 if query:
     handle_user_input(query)
@@ -198,35 +198,37 @@ if query:
                 with st.spinner("Generando respuesta..."):
                     full_response = st.write_stream(message_generator(ws))
                     print("[assistant] tipo de full_response: ", type(full_response))
+
+                    add_message("assistant", full_response)
+                    
+                    json_data={
+                        "user_session_uuid": st.session_state.user_session_uuid,
+                        "interaction_uuid": interaction_uuid,
+                        "full_response": full_response,
+                    }
+                    
+                    requests.post(f"{BACKEND_URL}/add_response", json=json_data)
+
+                    feedback = streamlit_feedback(
+                            feedback_type="thumbs",
+                            key=f"{interaction_uuid}",
+                            align="flex-start",
+                        )
+                    st.session_state.list_interaction_uuid.append(interaction_uuid)
             else:
                 placeholder_waring.warning("WebSocket connection failes")
         except Exception as e:
             placeholder_error.error(f"Failed to establish a WebSocket connection: {e}")
-    add_message("assistant", full_response)
+   
     
-    json_data={
-        "user_session_uuid": st.session_state.user_session_uuid,
-        "interaction_uuid": interaction_uuid,
-        "full_response": full_response,
-    }
     
-    requests.post(f"{BACKEND_URL}/add_response", json=json_data)
+    # st.write(st.session_state)
 
-    feedback = streamlit_feedback(
-            feedback_type="thumbs",
-            key=f"{interaction_uuid}",
-            align="flex-start",
-        )
-    st.session_state.list_interaction_uuid.append(interaction_uuid)
-    
-    
-    st.write(st.session_state)
+    # if interaction_uuid not in st.session_state:
+    #     print(f"[no encuentra el {interaction_uuid}]")
+    # else:
+    #     print(f"[encuentra el {interaction_uuid}]")
 
-    if interaction_uuid not in st.session_state:
-        print(f"[no encuentra el {interaction_uuid}]")
-    else:
-        print(f"[encuentra el {interaction_uuid}]")
-
-    placeholder_waring.warning(st.session_state.history_messages)
+    # placeholder_waring.warning(st.session_state.history_messages)
 # else:
 #     placeholder_info.info(":material/info: Por favor, introduce una consulta.")

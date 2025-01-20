@@ -103,7 +103,7 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"El archivo {file_path} no existe.")
 
-        resolution, articles_entities, resolve, resolve_page = get_info_document(file_path)
+        resolution, articles_entities, copia, resolve, resolve_page = get_info_document(file_path)
         print(f"\n\n-resolution 1: \n{resolution}")
         if not resolution:
             resolution = [f'{os.path.splitext(os.path.basename(file_path))[0]}']
@@ -114,6 +114,8 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         # print(f"\n\n----------------------------------------------------------")
         # print(f"\n\n[proces_any_doc] resolve \n{resolve}")
         # print(f"\n\n----------------------------------------------------------")
+        # print(f"\n\n----------------------------------------------------------")
+        # print("\n\copia: ", copia)
         if resolve_page is None:
             resolve_page = 0
         # print("\n\nresolve_page: ", resolve_page)
@@ -153,7 +155,8 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
             "file_path": file_path,
             "resolve_page": resolve_page,  # Asignamos la página de la resolución
             "collection_name": collection_name,
-            "considerations": considerations  # Asignamos las consideraciones a la metadata
+            "considerations": considerations,  # Asignamos las consideraciones a la metadata
+            "copia": copia
         }
         # print(f"\n\n----------------------------------------------------------")
         # print(f"\n\nBase metadata: {base_metadata}")
