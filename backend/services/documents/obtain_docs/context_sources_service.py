@@ -79,17 +79,22 @@ def get_context_sources(query: str, word_list, n_documents):
             collection = return_collection(collection_name)
             print(f"[contex_sources_service] Tipo de collection: {type(collection)}")
 
-            search_results = collection.query(
+            search_results = collection.query(  # type: ignore
                 query_embeddings=[query_embedding],
                 n_results=n_documents,
-                where=metadata_filters,
-                where_document=full_text_filters,
-                include=["documents", "metadatas", "distances"],
+                where=metadata_filters,  # type: ignore
+                where_document=full_text_filters,  # type: ignore
+                include=["documents", "metadatas", "distances"],  # type: ignore
             )
             # print(f"\nRESULTS\n\n------[contex_sources_service] Resultado de search_results {json.dumps(search_results, indent=4, default=str)}")
 
             # Verificar si 'documents' contiene resultados y procesarlos
-            if "documents" in search_results and search_results["documents"]:
+            if (
+                "documents" in search_results
+                and search_results["documents"]
+                and search_results["metadatas"]
+                and search_results["distances"]
+            ):
                 # Obtener los documentos de 'documents'
                 documents = search_results["documents"][
                     0

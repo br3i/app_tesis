@@ -8,12 +8,13 @@ from models.document import Document
 from dotenv import load_dotenv
 
 # Especifica la ruta al archivo .env
-dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../.env')
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../.env")
 load_dotenv(dotenv_path)
 
 # Ahora puedes acceder a las variables de entorno
-TIME_ZONE = os.getenv('TIME_ZONE')
-DOCUMENTS_PATH = os.getenv('DOCUMENTS_PATH')
+TIME_ZONE = os.getenv("TIME_ZONE", "America/Guayaquil")
+DOCUMENTS_PATH = os.getenv("DOCUMENTS_PATH", "./documents")
+
 
 def get_files(directory=DOCUMENTS_PATH):
     print(
@@ -27,18 +28,25 @@ def get_files(directory=DOCUMENTS_PATH):
     print(f"Archivos encontrados: {files}")
     return files
 
+
 def check_document_exists(document_name, collection_name):
-    print(f"[UPLOAD_SERVICE] Llega con estos valores: dn:{document_name} y cn:{collection_name}")
-    
+    print(
+        f"[UPLOAD_SERVICE] Llega con estos valores: dn:{document_name} y cn:{collection_name}"
+    )
+
     try:
         # Obtener la sesión de la base de datos
         db_session = next(get_db())
 
         # Realizar una consulta en la base de datos buscando coincidencias
-        document = db_session.query(Document).filter(
-            Document.name == document_name,
-            Document.collection_name == collection_name
-        ).first()  # Obtener solo el primer resultado
+        document = (
+            db_session.query(Document)
+            .filter(
+                Document.name == document_name,
+                Document.collection_name == collection_name,
+            )
+            .first()
+        )  # Obtener solo el primer resultado
 
         # Si se encuentra un documento, significa que ya existe
         if document:
@@ -51,6 +59,7 @@ def check_document_exists(document_name, collection_name):
     except Exception as e:
         print(f"Error al comprobar la existencia del documento: {e}")
         return False
+
 
 def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
     """
@@ -88,7 +97,7 @@ def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
             collection_name=collection_name,
             path=file_path_str,
             created_at=datetime.now(pytz.timezone(TIME_ZONE)),
-            embeddings_uuids = []
+            embeddings_uuids=[],
         )
 
         db.add(document)
@@ -103,7 +112,7 @@ def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
         db.rollback()
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
-            print(f"Archivo eliminado: {file_path}")    
+            print(f"Archivo eliminado: {file_path}")
         return None
     finally:
         db.close()

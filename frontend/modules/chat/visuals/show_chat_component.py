@@ -1,7 +1,7 @@
 import streamlit as st
 import tempfile
 import io
-import urllib
+import urllib.parse
 import requests
 from modules.chat.utils.extract_page_image import extract_page_image
 

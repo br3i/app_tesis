@@ -1,4 +1,3 @@
-import json
 import re
 import os
 import uuid
@@ -8,8 +7,8 @@ import pytesseract
 import time
 from docx import Document as DocxDocument
 from PIL import Image
+from pdf2image import convert_from_path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PDFPlumberLoader
 from langchain.schema import Document
 from models.database import get_db
 from services.embeddings.save_embedding_service import save_embeddings
@@ -18,27 +17,29 @@ from services.documents.treat_docs.info_documents_service import get_info_docume
 from dotenv import load_dotenv
 
 # Especifica la ruta al archivo .env
-dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../.env')
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../.env")
 load_dotenv(dotenv_path)
 
 # Leer el contenido del archivo .env
-CHUNK_SIZE = os.getenv('CHUNK_SIZE', '512')  # Establecer valor predeterminado
-CHUNK_OVERLAP = os.getenv('CHUNK_OVERLAP', '40')  # Establecer valor predeterminado
-LENGTH_FUNCTION = os.getenv('LENGTH_FUNCTION', 'len')  # Se asigna por defecto a 'len'
-IS_SEPARATOR_REGEX = os.getenv('IS_SEPARATOR_REGEX', 'False')  # Predeterminado a 'False'
+CHUNK_SIZE = os.getenv("CHUNK_SIZE", "512")  # Establecer valor predeterminado
+CHUNK_OVERLAP = os.getenv("CHUNK_OVERLAP", "40")  # Establecer valor predeterminado
+LENGTH_FUNCTION = os.getenv("LENGTH_FUNCTION", "len")  # Se asigna por defecto a 'len'
+IS_SEPARATOR_REGEX = os.getenv(
+    "IS_SEPARATOR_REGEX", "False"
+)  # Predeterminado a 'False'
 
 # Convertir las variables a los tipos correctos
 try:
     # Convertir CHUNK_SIZE y CHUNK_OVERLAP a enteros
     CHUNK_SIZE = int(CHUNK_SIZE)
     CHUNK_OVERLAP = int(CHUNK_OVERLAP)
-    
+
     # Convertir LENGTH_FUNCTION (especificamos la función que queremos usar)
-    if LENGTH_FUNCTION == 'len':
+    if LENGTH_FUNCTION == "len":
         LENGTH_FUNCTION = len  # Asignamos la función len
 
     # Convertir IS_SEPARATOR_REGEX a booleano
-    IS_SEPARATOR_REGEX = IS_SEPARATOR_REGEX.lower() in ['true', '1', 't', 'y', 'yes']
+    IS_SEPARATOR_REGEX = IS_SEPARATOR_REGEX.lower() in ["true", "1", "t", "y", "yes"]
 except ValueError as e:
     print(f"Error en la conversión de las variables del .env: {e}")
     # Asignar valores predeterminados si algo falla
@@ -51,44 +52,46 @@ except ValueError as e:
 print(f"[Valores del env] CHUNK_SIZE: {CHUNK_SIZE} ({type(CHUNK_SIZE)})")
 print(f"[Valores del env] CHUNK_OVERLAP: {CHUNK_OVERLAP} ({type(CHUNK_OVERLAP)})")
 print(f"[Valores del env] LENGTH_FUNCTION: {LENGTH_FUNCTION} ({type(LENGTH_FUNCTION)})")
-print(f"[Valores del env] IS_SEPARATOR_REGEX: {IS_SEPARATOR_REGEX} ({type(IS_SEPARATOR_REGEX)})")
+print(
+    f"[Valores del env] IS_SEPARATOR_REGEX: {IS_SEPARATOR_REGEX} ({type(IS_SEPARATOR_REGEX)})"
+)
 
 # Configuración del splitter de texto
 # text_splitter = RecursiveCharacterTextSplitter(
 #     chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP, length_function=LENGTH_FUNCTION, is_separator_regex=IS_SEPARATOR_REGEX
 # )
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP, length_function=LENGTH_FUNCTION, is_separator_regex=IS_SEPARATOR_REGEX
+    chunk_size=CHUNK_SIZE,
+    chunk_overlap=CHUNK_OVERLAP,
+    length_function=LENGTH_FUNCTION,
+    is_separator_regex=IS_SEPARATOR_REGEX,
 )
 
 
 def ocr_from_pdf(file_path: str):
-    """ Convertir PDF con imágenes a texto usando OCR """
+    """Convertir PDF con imágenes a texto usando OCR"""
     try:
         pages = convert_from_path(file_path)
         docs = []
-        
+
         for page_number, page in enumerate(pages, start=1):
             text = pytesseract.image_to_string(page)
             if text.strip():  # Si se detectó texto en la imagen
-                docs.append({
-                    "page_content": text,
-                    "metadata": {"page": page_number}
-                })
+                docs.append({"page_content": text, "metadata": {"page": page_number}})
         print(f"[ocr_from_pdf] Docs generados con OCR: {len(docs)}")
         return docs
     except Exception as e:
         print(f"Error al procesar OCR: {e}")
         return []
 
+
 # Función para extraer el número de resolución
 def extract_resolution_from_name(document_name):
-    resolution_pattern = r'RESOLUCIÓN\s(\d+)\.CP\.(\d{4})'
+    resolution_pattern = r"RESOLUCIÓN\s(\d+)\.CP\.(\d{4})"
     match = re.search(resolution_pattern, document_name)
     if match:
         return match.group(1)  # Devuelve el número de la resolución
     return None  # Si no se encuentra una resolución
-
 
 
 def process_pdf(file_path: str, collection_name: str, id_document: int):
@@ -103,10 +106,17 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"El archivo {file_path} no existe.")
 
-        resolution, number_resolution, articles_entities, copia, resolve, resolve_page = get_info_document(file_path)
+        (
+            resolution,
+            number_resolution,
+            articles_entities,
+            copia,
+            resolve,
+            resolve_page,
+        ) = get_info_document(file_path)
         # print(f"\n\n-resolution 1: \n{resolution}")
         if not resolution:
-            resolution = [f'{os.path.splitext(os.path.basename(file_path))[0]}']
+            resolution = [f"{os.path.splitext(os.path.basename(file_path))[0]}"]
         # print(f"\n\n-number_resolution: \n{number_resolution}")
         # print("\n----------------------------------------------------------")
         # print(f"\n-resolution 2: \n{resolution}")
@@ -127,6 +137,8 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         # print("\ntipo resolve_page: ", type(resolve_page))
         # time.sleep(1000)
 
+        if resolve is None:
+            resolve = ""
         documents = [Document(page_content=resolve)]
         # print(f"\n\n----------------------------------------------------------")
         # print(f"\n\nDocuments: {documents}")
@@ -134,7 +146,7 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         text_chunks = text_splitter.split_documents(documents)
         # print(f"\n\n----------------------------------------------------------")
         # print(f"\n\nText chunks: {text_chunks}")
-        
+
         ##Obtener el nombre de la resolución (de la variable 'resolution' que debes haber definido anteriormente)
         document_name = resolution  # Suponiendo que 'resolution' es la variable que contiene el nombre de la resolución
         # print(f"\n\n----------------------------------------------------------")
@@ -142,14 +154,14 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
 
         # Procesar los artículos y asociarlos con su página
         considerations = []
+        if articles_entities is None:
+            articles_entities = []
         for article in articles_entities:
-            consideration_metadata = {
-                "consideration": article
-            }
+            consideration_metadata = {"consideration": article}
             considerations.append(consideration_metadata)
         # print(f"\n\n----------------------------------------------------------")
         # print(f"\n\nConsiderations: {considerations}")
-        
+
         # Crear metadata base fuera del loop
         base_metadata = {
             "document_name": document_name,
@@ -157,34 +169,38 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
             "resolve_page": resolve_page,  # Asignamos la página de la resolución
             "collection_name": collection_name,
             "considerations": considerations,  # Asignamos las consideraciones a la metadata
-            "copia": copia
+            "copia": copia,
         }
 
         if number_resolution is not None:
             base_metadata["number_resolution"] = str(number_resolution)
-        print(f"\n\n-------------------------[proc_any_doc_srv]---------------------------------")
+        print(
+            f"\n\n-------------------------[proc_any_doc_srv]---------------------------------"
+        )
         print(f"\n\nBase metadata: \n{base_metadata}")
         # time.sleep(10000)
 
         # Crear la metadata para los fragmentos de 'resolve'
         for idx, chunk in enumerate(text_chunks):
-            #time.sleep(5)
+            # time.sleep(5)
             try:
-                print(f"\n[process_resolve_and_articles] Procesando fragmento {idx + 1}...")
+                print(
+                    f"\n[process_resolve_and_articles] Procesando fragmento {idx + 1}..."
+                )
 
                 # Verificar tipo de chunk y sus atributos
-                #print(f"[process_resolve_and_articles] Tipo de chunk: {type(chunk)}")
-                #print(f"\n[process_resolve_and_articles] Contenido del chunk: {chunk}")  # Mostrar solo los primeros 100 caracteres
+                # print(f"[process_resolve_and_articles] Tipo de chunk: {type(chunk)}")
+                # print(f"\n[process_resolve_and_articles] Contenido del chunk: {chunk}")  # Mostrar solo los primeros 100 caracteres
 
                 fragment_id = str(uuid.uuid4())
                 # print("[process_any_doc_service] fragment_id = ", fragment_id)
-                
+
                 # Crear metadata para el fragmento
                 document_metadata = {
                     **base_metadata,
                     "uuid": fragment_id,
                     "chunk_index": str(idx),
-                    "text": chunk.page_content, # Asignamos las consideraciones a la metadata
+                    "text": chunk.page_content,  # Asignamos las consideraciones a la metadata
                 }
                 # print(f"\n\n----------------------------------------------------------")
                 # print(f"\n\n[process_resolve_and_articles] Metadata para el fragmento: {document_metadata}")
@@ -193,8 +209,10 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
                 collection = return_collection(collection_name)
                 # print(f"\n\n----------------------------------------------------------")
                 # print(f"\n\n[process_resolve_and_articles] Collection: {collection}")
-                
-                save_embeddings([chunk.page_content], collection, document_metadata, id_document, db)
+
+                save_embeddings(
+                    [chunk.page_content], collection, document_metadata, id_document, db
+                )
 
             except Exception as e:
                 print(f"Error procesando el fragmento {idx + 1}: {e}")
@@ -206,199 +224,199 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         db.close()
 
 
-def process_word_document(file_path: str, collection_name: str):
-    print("--------------------------[PROCESS_WORD_DOCUMENT]--------------------------")
-    """ Procesar documentos Word (docx, doc) """
-    try:
-        doc = DocxDocument(file_path)
-        print("[prc-wrd] valor de doc: ", doc)
-        full_text = []
-        for para in doc.paragraphs:
-            full_text.append(para.text)
-        print("[prc-wrd] valor de full_text: ", full_text)
-                
-        # Dividir el texto en fragmentos
-        text_chunks = text_splitter.split_documents(full_text)
-        print(f"[prc-wrd] Fragmentos generados: {len(text_chunks)}")
-        print(f"[prc-wrd] Valor de text_chunks {text_chunks}")
-        
-        # Guardar los fragmentos como embeddings
-        for idx, chunk in enumerate(text_chunks):
-            try:
-                fragment_id = str(uuid.uuid4())
-                document_metadata = {
-                    "uuid": fragment_id,
-                    "document_name": os.path.basename(file_path),
-                    "chunk_index": str(idx),
-                    "text": chunk,
-                    "collection_name": collection_name
-                }
+# def process_word_document(file_path: str, collection_name: str):
+#     print("--------------------------[PROCESS_WORD_DOCUMENT]--------------------------")
+#     """ Procesar documentos Word (docx, doc) """
+#     try:
+#         doc = DocxDocument(file_path)
+#         print("[prc-wrd] valor de doc: ", doc)
+#         full_text = []
+#         for para in doc.paragraphs:
+#             full_text.append(para.text)
+#         print("[prc-wrd] valor de full_text: ", full_text)
 
-                collection = return_collection(collection_name)
-                
-                save_embeddings([chunk], collection_name, document_metadata)
-            except Exception as e:
-                print(f"Error procesando el fragmento {idx + 1}: {e}")
-        
-        return len(full_text), len(text_chunks)
-    except Exception as e:
-        print(f"Error procesando el documento Word: {e}")
-        return 0, 0
+#         # Dividir el texto en fragmentos
+#         text_chunks = text_splitter.split_documents(full_text)
+#         print(f"[prc-wrd] Fragmentos generados: {len(text_chunks)}")
+#         print(f"[prc-wrd] Valor de text_chunks {text_chunks}")
 
+#         # Guardar los fragmentos como embeddings
+#         for idx, chunk in enumerate(text_chunks):
+#             try:
+#                 fragment_id = str(uuid.uuid4())
+#                 document_metadata = {
+#                     "uuid": fragment_id,
+#                     "document_name": os.path.basename(file_path),
+#                     "chunk_index": str(idx),
+#                     "text": chunk,
+#                     "collection_name": collection_name,
+#                 }
 
-def process_text_document(file_path: str, collection_name: str):
-    print("--------------------------[PROCESS_TEXT_DOCUMENT]--------------------------")
-    """ Procesar documentos de texto (txt, rtf, odf) """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
-        
-        print("[prc-txt] Valor de content: ", content)
-        
-        # Dividir el texto en fragmentos
-        text_chunks = text_splitter.split_documents([content])
-        print(f"[prc-txt] Fragmentos generados: {len(text_chunks)}")
-        print(f"[prc-txt] Valor de text_chunks {text_chunks}")
-        
-        # Guardar los fragmentos como embeddings
-        for idx, chunk in enumerate(text_chunks):
-            try:
-                fragment_id = str(uuid.uuid4())
-                document_metadata = {
-                    "uuid": fragment_id,
-                    "document_name": os.path.basename(file_path),
-                    "chunk_index": str(idx),
-                    "text": chunk,
-                    "collection_name": collection_name
-                }
+#                 collection = return_collection(collection_name)
 
-                collection = return_collection(collection_name)
-                
-                save_embeddings([chunk], collection_name, document_metadata)
-            except Exception as e:
-                print(f"Error procesando el fragmento {idx + 1}: {e}")
-        
-        return 1, len(text_chunks)  # Devuelve 1 porque solo es un documento de texto
-    except Exception as e:
-        print(f"Error procesando el documento de texto: {e}")
-        return 0, 0
+#                 save_embeddings([chunk], collection_name, document_metadata)
+#             except Exception as e:
+#                 print(f"Error procesando el fragmento {idx + 1}: {e}")
+
+#         return len(full_text), len(text_chunks)
+#     except Exception as e:
+#         print(f"Error procesando el documento Word: {e}")
+#         return 0, 0
 
 
-def process_image(file_path: str, collection_name: str):
-    print("--------------------------[PROCESS_IMAGE]--------------------------")
-    """ Procesar imágenes con OCR utilizando pytesseract """
-    try:
-        image = Image.open(file_path)
-        print(f"[prc-img] Valor de image {image}")
-        text = pytesseract.image_to_string(image)
-        print(f"[prc-img] Valor de text {text}")
-        
-        # Dividir el texto en fragmentos
-        text_chunks = text_splitter.split_documents([text])
-        print(f"[prc-img] Fragmentos generados: {len(text_chunks)}")
-        print(f"[prc-img] Valor de text_chunks {text_chunks}")
-        
-        # Guardar los fragmentos como embeddings
-        for idx, chunk in enumerate(text_chunks):
-            try:
-                fragment_id = str(uuid.uuid4())
-                document_metadata = {
-                    "uuid": fragment_id,
-                    "document_name": os.path.basename(file_path),
-                    "chunk_index": str(idx),
-                    "text": chunk,
-                    "collection_name": collection_name
-                }
+# def process_text_document(file_path: str, collection_name: str):
+#     print("--------------------------[PROCESS_TEXT_DOCUMENT]--------------------------")
+#     """ Procesar documentos de texto (txt, rtf, odf) """
+#     try:
+#         with open(file_path, "r", encoding="utf-8") as file:
+#             content = file.read()
 
-                collection = return_collection(collection_name)
-                
-                save_embeddings([chunk], collection_name, document_metadata)
-            except Exception as e:
-                print(f"Error procesando el fragmento {idx + 1}: {e}")
-        
-        return 1, len(text_chunks)  # Devuelve 1 ya que es una sola imagen
-    except Exception as e:
-        print(f"Error procesando la imagen: {e}")
-        return 0, 0
+#         print("[prc-txt] Valor de content: ", content)
 
+#         # Dividir el texto en fragmentos
+#         text_chunks = text_splitter.split_documents([content])
+#         print(f"[prc-txt] Fragmentos generados: {len(text_chunks)}")
+#         print(f"[prc-txt] Valor de text_chunks {text_chunks}")
 
-def process_ppt(file_path: str, collection_name: str):
-    print("--------------------------[PROCESS_PPT]--------------------------")
-    """ Procesar presentaciones de PowerPoint (ppt, pptx) """
-    try:
-        presentation = pptx.Presentation(file_path)
-        print(f"[prc-ppt] Valor de presentation {presentation}")
-        full_text = []
-        
-        for slide in presentation.slides:
-            for shape in slide.shapes:
-                if hasattr(shape, "text"):
-                    full_text.append(shape.text)
-        
-        print(f"[prc-ppt] Valor de full_text {full_text}")
-        
-        # Dividir el texto en fragmentos
-        text_chunks = text_splitter.split_documents(full_text)
-        print(f"[prc-ppt] Fragmentos generados: {len(text_chunks)}")
-        print(f"[prc-ppt] Valor de text_chunks {text_chunks}")
-        
-        # Guardar los fragmentos como embeddings
-        for idx, chunk in enumerate(text_chunks):
-            try:
-                fragment_id = str(uuid.uuid4())
-                document_metadata = {
-                    "uuid": fragment_id,
-                    "document_name": os.path.basename(file_path),
-                    "chunk_index": str(idx),
-                    "text": chunk,
-                    "collection_name": collection_name
-                }
+#         # Guardar los fragmentos como embeddings
+#         for idx, chunk in enumerate(text_chunks):
+#             try:
+#                 fragment_id = str(uuid.uuid4())
+#                 document_metadata = {
+#                     "uuid": fragment_id,
+#                     "document_name": os.path.basename(file_path),
+#                     "chunk_index": str(idx),
+#                     "text": chunk,
+#                     "collection_name": collection_name,
+#                 }
 
-                collection = return_collection(collection_name)
-                
-                save_embeddings([chunk], collection_name, document_metadata)
-            except Exception as e:
-                print(f"Error procesando el fragmento {idx + 1}: {e}")
-        
-        return len(full_text), len(text_chunks)
-    except Exception as e:
-        print(f"Error procesando la presentación PPT: {e}")
-        return 0, 0
+#                 collection = return_collection(collection_name)
+
+#                 save_embeddings([chunk], collection_name, document_metadata)
+#             except Exception as e:
+#                 print(f"Error procesando el fragmento {idx + 1}: {e}")
+
+#         return 1, len(text_chunks)  # Devuelve 1 porque solo es un documento de texto
+#     except Exception as e:
+#         print(f"Error procesando el documento de texto: {e}")
+#         return 0, 0
 
 
-def process_excel(file_path: str, collection_name: str):
-    print("--------------------------[PROCESS_EXCEL]--------------------------")
-    """ Procesar documentos Excel (xls, xlsx) """
-    try:
-        df = pd.read_excel(file_path)
-        print(f"[prc-excel] Valor de df {df}")
-        full_text = df.to_string(index=False, header=False)  # Convertir todo a texto
-        print(f"[prc-excel] Valor de full_text {full_text}")
-        
-        # Dividir el texto en fragmentos
-        text_chunks = text_splitter.split_documents([full_text])
-        print(f"[prc-excel] Fragmentos generados: {len(text_chunks)}")
-        print(f"[prc-excel] Valor de text_chunks {text_chunks}")
-        
-        # Guardar los fragmentos como embeddings
-        for idx, chunk in enumerate(text_chunks):
-            try:
-                fragment_id = str(uuid.uuid4())
-                document_metadata = {
-                    "uuid": fragment_id,
-                    "document_name": os.path.basename(file_path),
-                    "chunk_index": str(idx),
-                    "text": chunk,
-                    "collection_name": collection_name
-                }
+# def process_image(file_path: str, collection_name: str):
+#     print("--------------------------[PROCESS_IMAGE]--------------------------")
+#     """ Procesar imágenes con OCR utilizando pytesseract """
+#     try:
+#         image = Image.open(file_path)
+#         print(f"[prc-img] Valor de image {image}")
+#         text = pytesseract.image_to_string(image)
+#         print(f"[prc-img] Valor de text {text}")
 
-                collection = return_collection(collection_name)
-                
-                save_embeddings([chunk], collection_name, document_metadata)
-            except Exception as e:
-                print(f"Error procesando el fragmento {idx + 1}: {e}")
-        
-        return 1, len(text_chunks)  # Devuelve 1 ya que es un solo archivo Excel
-    except Exception as e:
-        print(f"Error procesando el documento Excel: {e}")
-        return 0, 0
+#         # Dividir el texto en fragmentos
+#         text_chunks = text_splitter.split_documents([text])
+#         print(f"[prc-img] Fragmentos generados: {len(text_chunks)}")
+#         print(f"[prc-img] Valor de text_chunks {text_chunks}")
+
+#         # Guardar los fragmentos como embeddings
+#         for idx, chunk in enumerate(text_chunks):
+#             try:
+#                 fragment_id = str(uuid.uuid4())
+#                 document_metadata = {
+#                     "uuid": fragment_id,
+#                     "document_name": os.path.basename(file_path),
+#                     "chunk_index": str(idx),
+#                     "text": chunk,
+#                     "collection_name": collection_name,
+#                 }
+
+#                 collection = return_collection(collection_name)
+
+#                 save_embeddings([chunk], collection_name, document_metadata)
+#             except Exception as e:
+#                 print(f"Error procesando el fragmento {idx + 1}: {e}")
+
+#         return 1, len(text_chunks)  # Devuelve 1 ya que es una sola imagen
+#     except Exception as e:
+#         print(f"Error procesando la imagen: {e}")
+#         return 0, 0
+
+
+# def process_ppt(file_path: str, collection_name: str):
+#     print("--------------------------[PROCESS_PPT]--------------------------")
+#     """ Procesar presentaciones de PowerPoint (ppt, pptx) """
+#     try:
+#         presentation = pptx.Presentation(file_path)
+#         print(f"[prc-ppt] Valor de presentation {presentation}")
+#         full_text = []
+
+#         for slide in presentation.slides:
+#             for shape in slide.shapes:
+#                 if hasattr(shape, "text"):
+#                     full_text.append(shape.text)
+
+#         print(f"[prc-ppt] Valor de full_text {full_text}")
+
+#         # Dividir el texto en fragmentos
+#         text_chunks = text_splitter.split_documents(full_text)
+#         print(f"[prc-ppt] Fragmentos generados: {len(text_chunks)}")
+#         print(f"[prc-ppt] Valor de text_chunks {text_chunks}")
+
+#         # Guardar los fragmentos como embeddings
+#         for idx, chunk in enumerate(text_chunks):
+#             try:
+#                 fragment_id = str(uuid.uuid4())
+#                 document_metadata = {
+#                     "uuid": fragment_id,
+#                     "document_name": os.path.basename(file_path),
+#                     "chunk_index": str(idx),
+#                     "text": chunk,
+#                     "collection_name": collection_name,
+#                 }
+
+#                 collection = return_collection(collection_name)
+
+#                 save_embeddings([chunk], collection_name, document_metadata)
+#             except Exception as e:
+#                 print(f"Error procesando el fragmento {idx + 1}: {e}")
+
+#         return len(full_text), len(text_chunks)
+#     except Exception as e:
+#         print(f"Error procesando la presentación PPT: {e}")
+#         return 0, 0
+
+
+# def process_excel(file_path: str, collection_name: str):
+#     print("--------------------------[PROCESS_EXCEL]--------------------------")
+#     """ Procesar documentos Excel (xls, xlsx) """
+#     try:
+#         df = pd.read_excel(file_path)
+#         print(f"[prc-excel] Valor de df {df}")
+#         full_text = df.to_string(index=False, header=False)  # Convertir todo a texto
+#         print(f"[prc-excel] Valor de full_text {full_text}")
+
+#         # Dividir el texto en fragmentos
+#         text_chunks = text_splitter.split_documents([full_text])
+#         print(f"[prc-excel] Fragmentos generados: {len(text_chunks)}")
+#         print(f"[prc-excel] Valor de text_chunks {text_chunks}")
+
+#         # Guardar los fragmentos como embeddings
+#         for idx, chunk in enumerate(text_chunks):
+#             try:
+#                 fragment_id = str(uuid.uuid4())
+#                 document_metadata = {
+#                     "uuid": fragment_id,
+#                     "document_name": os.path.basename(file_path),
+#                     "chunk_index": str(idx),
+#                     "text": chunk,
+#                     "collection_name": collection_name,
+#                 }
+
+#                 collection = return_collection(collection_name)
+
+#                 save_embeddings([chunk], collection_name, document_metadata)
+#             except Exception as e:
+#                 print(f"Error procesando el fragmento {idx + 1}: {e}")
+
+#         return 1, len(text_chunks)  # Devuelve 1 ya que es un solo archivo Excel
+#     except Exception as e:
+#         print(f"Error procesando el documento Excel: {e}")
+#         return 0, 0

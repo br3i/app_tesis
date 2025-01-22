@@ -13,7 +13,7 @@ dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../..
 load_dotenv(dotenv_path)
 
 # Ahora puedes acceder a las variables de entorno
-TIME_ZONE = os.getenv("TIME_ZONE")
+TIME_ZONE = os.getenv("TIME_ZONE", "America/Guayaquil")
 
 
 def save_requested_document(sources_global):
@@ -54,8 +54,8 @@ def save_requested_document(sources_global):
 
             if requested_doc:
                 # Si ya existe, actualiza el contador y la fecha
-                requested_doc.requested_count += 1
-                requested_doc.last_requested_at = datetime.now(pytz.timezone(TIME_ZONE))
+                requested_doc.requested_count += 1  # type: ignore
+                requested_doc.last_requested_at = datetime.now(pytz.timezone(TIME_ZONE))  # type: ignore
                 print(f"Actualizado: {requested_doc}")
             else:
                 # Si no existe, crea un nuevo registro

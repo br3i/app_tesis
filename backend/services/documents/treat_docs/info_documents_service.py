@@ -3,6 +3,7 @@ import PyPDF2
 import re
 import time
 
+
 def extract_text_from_pages(document_path):
     """
     Extrae el texto de todas las páginas de un archivo PDF desde el inicio hasta encontrar el patrón "RESUELVE:".
@@ -18,16 +19,14 @@ def extract_text_from_pages(document_path):
     third_last_page = None
     fallback_page = 0
 
-    replace_patterns = [
-        (r"[\n\r\f]", " "), 
-        (r"\s{2,}", " ")
-    ]
+    replace_patterns = [(r"[\n\r\f]", " "), (r"\s{2,}", " ")]
     clean_patterns = [
-        (r"^\s*ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL", "")
+        (
+            r"^\s*ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL",
+            "",
+        )
     ]
-    search_patterns = [
-        r"unanimidad,.*?RESUELVE\s*:\s*(Art[íi]culo)"
-    ]
+    search_patterns = [r"unanimidad,.*?RESUELVE\s*:\s*(Art[íi]culo)"]
 
     with open(document_path, "rb") as file:
         reader = PyPDF2.PdfReader(file)
@@ -49,19 +48,25 @@ def extract_text_from_pages(document_path):
                 page_text = re.sub(pattern, replacement, page_text)
             # print("\n[[info_docs_service]] Después de clean_patterns:", repr(page_text))
             page_text = page_text.strip()
-            total_text += page_text  # Concatenar texto de cada página con un espacio en blanco
+            total_text += (
+                page_text  # Concatenar texto de cada página con un espacio en blanco
+            )
             # print("\n\n\n[[info_docs_service]] Total_text acumulado:", repr(total_text))
             # time.sleep(3)
 
             # Actualizar la penúltima página (solo si es válida)
             if page_num == len(reader.pages) - 3:
                 third_last_page = page_num
-                
+
             # Buscar el patrón "unanimidad, - - RESUELVE - - : - - Art[ií]culo"
             for search_pattern in search_patterns:
                 if re.search(search_pattern, page_text, flags=re.IGNORECASE):
-                    final_page = page_num  # Guardar la página donde se encontró el patrón
-                    print(f"[[info_docs_service]] Patrón encontrado: {search_pattern} en página {page_num}")
+                    final_page = (
+                        page_num  # Guardar la página donde se encontró el patrón
+                    )
+                    print(
+                        f"[[info_docs_service]] Patrón encontrado: {search_pattern} en página {page_num}"
+                    )
                     break  # Detener la búsqueda después de encontrar el patrón
 
     total_text = re.sub(r"\…{2,}", "FIRMA", total_text, flags=re.IGNORECASE)
@@ -78,6 +83,7 @@ def extract_text_from_pages(document_path):
             fallback_page = total_pages - 3
         return total_text, fallback_page
 
+
 def extract_text_resolve(document_path, start_page):
     """
     Extrae el texto desde una página específica hasta el final del documento, comenzando en la página especificada.
@@ -88,7 +94,7 @@ def extract_text_resolve(document_path, start_page):
         start_page (int): Número de página desde la cual comenzar a extraer (1-indexed).
 
     Returns:
-        str, str: 
+        str, str:
             - full_text: Texto procesado, manteniendo "SECRETARIO GENERAL".
             - copia: Texto desde "Copia:" dentro de la sección "SECRETARIO GENERAL".
     """
@@ -97,11 +103,20 @@ def extract_text_resolve(document_path, start_page):
 
     # Lista de patrones para reemplazar en el texto de cada página
     replace_patterns = [
-        (r"[\n\r\f]", " "),  # Reemplazar saltos de línea y otros caracteres de nueva línea por un espacio
-        (r"\s{2,}", " "),    # Reemplazar múltiples espacios por un solo espacio
+        (
+            r"[\n\r\f]",
+            " ",
+        ),  # Reemplazar saltos de línea y otros caracteres de nueva línea por un espacio
+        (r"\s{2,}", " "),  # Reemplazar múltiples espacios por un solo espacio
         (r"\…{2,}", "FIRMA"),  # Reemplazar secuencias de puntos suspensivos por "FIRMA"
-        (r"^ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL", ""),
-        (r"^\s*ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL", "")
+        (
+            r"^ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL",
+            "",
+        ),
+        (
+            r"^\s*ESPOCH ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO DIRECCIÓN DE SECRETARÍA GENERAL",
+            "",
+        ),
     ]
 
     # Patrón para buscar "SECRETARIO GENERAL" y su contenido hasta "Copia:"
@@ -115,7 +130,9 @@ def extract_text_resolve(document_path, start_page):
 
         # Asegurarse de que la página inicial esté dentro de un rango válido
         if start_page < 0 or start_page > len(reader.pages):
-            raise ValueError("El número de página inicial está fuera del rango del documento.")
+            raise ValueError(
+                "El número de página inicial está fuera del rango del documento."
+            )
 
         # Iterar desde la página especificada hasta la última página
         for page_num in range(start_page, len(reader.pages)):
@@ -133,7 +150,7 @@ def extract_text_resolve(document_path, start_page):
     section_match = re.search(section_pattern, full_text, flags=re.IGNORECASE)
     if section_match:
         section_text = section_match.group(1)  # Extraer desde "SECRETARIO GENERAL"
-        
+
         # Dentro de la sección, buscar específicamente "Copia:"
         copia_match = re.search(copia_pattern, section_text, flags=re.IGNORECASE)
         if copia_match:
@@ -142,6 +159,7 @@ def extract_text_resolve(document_path, start_page):
             full_text = full_text.replace(copia, "").strip()
 
     return full_text, copia
+
 
 def extract_text_from_first_page(document_path):
     """
@@ -158,29 +176,30 @@ def extract_text_from_first_page(document_path):
         first_page = reader.pages[0]
         return first_page.extract_text()
 
+
 def separate_text_into_paragraphs(text):
     # Lista de patrones para dividir el texto
     split_patterns = [
-        r'(?=Que,)'  # Captura todo después de "Que," y lo incluye como inicio de cada párrafo
+        r"(?=Que,)"  # Captura todo después de "Que," y lo incluye como inicio de cada párrafo
     ]
-    
+
     # Aplicar cada patrón de separación de manera secuencial
     for pattern in split_patterns:
-        text = re.sub(pattern, '\n', text)  # Sustituimos el patrón por un salto de línea
+        text = re.sub(
+            pattern, "\n", text
+        )  # Sustituimos el patrón por un salto de línea
     # Limpiar el texto resultante, eliminando saltos de línea innecesarios y espacios
-    paragraphs = text.split('\n')  # Dividir el texto en párrafos usando saltos de línea
+    paragraphs = text.split("\n")  # Dividir el texto en párrafos usando saltos de línea
     # Limpiar y asegurar que los párrafos no estén vacíos
     paragraphs = [paragraph.strip() for paragraph in paragraphs if paragraph.strip()]
-
 
     # Devolver los párrafos
     return paragraphs
 
+
 def process_paragraphs(paragraphs):
     # Lista de patrones para buscar las coincidencias
-    search_patterns = [
-        r"Que,(.*?)(;|:|,)"
-    ]
+    search_patterns = [r"Que,(.*?)(;|:|,)"]
 
     # Lista para almacenar las coincidencias
     article_entity = []
@@ -190,19 +209,28 @@ def process_paragraphs(paragraphs):
         for pattern in search_patterns:
             matches = re.findall(pattern, paragraph, flags=re.IGNORECASE)
             if matches:
-            # Si hay coincidencias, añadirlas a la lista
+                # Si hay coincidencias, añadirlas a la lista
                 for match in matches:
                     article_entity.append(match[0])
 
-    print(f"\n[info_docs_service] Total de coincidencias encontradas: {len(article_entity)}")
+    print(
+        f"\n[info_docs_service] Total de coincidencias encontradas: {len(article_entity)}"
+    )
     return article_entity
+
 
 def get_resolution(text):
     # Limpieza de espacios y formato antes de realizar la búsqueda
     clean_patterns = [
         (r"\s+", ""),  # Eliminar todos los espacios dentro de la resolución
-        (r"\s*\.?\s*CP\s*\.\s*", ".CP."),  # Asegurar que no haya espacios alrededor de ".CP."
-        (r"(RESOLUCI[ÓO]N)(\d+)", r"\1 \2")  # Volver a poner un solo espacio entre "RESOLUCIÓN" y el número
+        (
+            r"\s*\.?\s*CP\s*\.\s*",
+            ".CP.",
+        ),  # Asegurar que no haya espacios alrededor de ".CP."
+        (
+            r"(RESOLUCI[ÓO]N)(\d+)",
+            r"\1 \2",
+        ),  # Volver a poner un solo espacio entre "RESOLUCIÓN" y el número
     ]
 
     # Limpiar el texto utilizando los patrones de limpieza
@@ -213,13 +241,15 @@ def get_resolution(text):
     search_patterns = [
         r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}",  # El patrón más limpio, ya que el texto ya ha sido limpiado
         r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}",
-        r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}"
+        r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}",
     ]
 
     # Buscar la primera coincidencia utilizando los patrones de búsqueda
     resolution = None
     for pattern in search_patterns:
-        match = re.search(pattern, text)  # Usar re.search para encontrar solo la primera coincidencia
+        match = re.search(
+            pattern, text
+        )  # Usar re.search para encontrar solo la primera coincidencia
         if match:
             resolution = match.group(0)  # Obtener la coincidencia encontrada
             break  # Detener la búsqueda después de encontrar la primera coincidencia
@@ -231,7 +261,9 @@ def get_resolution(text):
     match_number = re.search(r"RESOLUCI[ÓO]N (\d{3,4})", resolution)
     number_resolution = None
     if match_number:
-        number_resolution = int(match_number.group(1))  # Extraemos el número de resolución
+        number_resolution = int(
+            match_number.group(1)
+        )  # Extraemos el número de resolución
 
     return resolution, number_resolution
 
@@ -248,28 +280,28 @@ def get_resolve(text):
         str: El texto procesado con las modificaciones solicitadas.
     """
     # Buscar "RESUELVE:" y descartar todo el texto antes de él
-    #resolve_index = re.search(r"unanimidad.*?RESUELVE:\s*(Art[íi]culo)", text, re.IGNORECASE)
-    
+    # resolve_index = re.search(r"unanimidad.*?RESUELVE:\s*(Art[íi]culo)", text, re.IGNORECASE)
+
     patterns = [
         r"unanimidad,.*?RESUELVE\s*:\s*(Art[íi]culo)",
         r"unanimidad,.*?RESUELVE:\s*(Art[íi]culo)",
         r"RESUELVE:\s*(Art[íi]culo)",
-        r"RESUELVE:"
+        r"RESUELVE:",
     ]
 
     resolve_index = None
     i = 0
     for pattern in patterns:
-        #print("[info_docs_service] get_resolve :", i)
-        i =+ 1
+        # print("[info_docs_service] get_resolve :", i)
+        i = +1
         resolve_index = re.search(pattern, text, flags=re.IGNORECASE)
         if resolve_index:
             break
-    
+
     # Si se encuentra un patrón "RESUELVE:", procesar el texto
     if resolve_index:
         # Extraer el texto desde "RESUELVE:" hasta el final
-        text = text[resolve_index.start():]
+        text = text[resolve_index.start() :]
 
     # Reemplazar las ocurrencias de las cadenas especificadas por un espacio vacío
     text = re.sub(r"\s{2,}", " ", text, flags=re.IGNORECASE)
@@ -291,11 +323,11 @@ def get_info_document(document_path):
         total_text, final_page = extract_text_from_pages(document_path)
         # time.sleep(5)
         # print("\n\n[info_docs_service ]Total_text:\n\n", total_text[-10000:]) #total_text[-70000:]
-        #print("\n\n\t[info_docs_service ] final_page:", final_page)
+        # print("\n\n\t[info_docs_service ] final_page:", final_page)
         # time.sleep(5)
         resolution, number_resolution = get_resolution(text_name_resolution)
-        
-        #Imprimir la resolución encontrada
+
+        # Imprimir la resolución encontrada
         # print("\n[info_docs_service] Resolución encontrada:", resolution)
 
         text_resolve, copia = extract_text_resolve(document_path, final_page)
@@ -309,22 +341,26 @@ def get_info_document(document_path):
 
         paragraphs = separate_text_into_paragraphs(total_text)
         # print("\n\n\t [info_docs_service] Paragraphs:", paragraphs)
-        
 
         # Procesar los párrafos y extraer los artículos y sus entidades
         # print("[info_documents_service] resolution: ", resolution)
         articles_entities = process_paragraphs(paragraphs)
-        #time.sleep(200)
+        # time.sleep(200)
 
-
-        #Imprimir artículos y entidades
+        # Imprimir artículos y entidades
         # if articles_entities:
         #     # print("\nArtículos y Entidades encontradas:")
         #     for i, (article_entity, delimiter) in enumerate(articles_entities):
         #         print(f"{i + 1}: {article_entity.strip()}")
-        
-        return resolution, number_resolution, articles_entities, copia, resolve, final_page+1
+
+        return (
+            resolution,
+            number_resolution,
+            articles_entities,
+            copia,
+            resolve,
+            final_page + 1,
+        )
     else:
         print("No se encontro el archivo.")
-        return None, None, None, None
-
+        return None, None, None, None, None, None

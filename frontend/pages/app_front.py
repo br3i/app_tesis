@@ -6,7 +6,7 @@ import json
 import io
 import urllib.parse
 import tempfile
-import fitz 
+import fitz
 from PIL import Image
 from streamlit_pdf_viewer import pdf_viewer
 
@@ -15,12 +15,14 @@ from streamlit_pdf_viewer import pdf_viewer
 BACKEND_URL = "http://localhost:8080"
 BACKEND_WS_URL = "ws://localhost:8080/ws"
 
+
 def extract_page_image(pdf_path, page_number):
     doc = fitz.open(pdf_path)
     page = doc.load_page(page_number - 1)  # PyMuPDF usa indexación 0
-    pix = page.get_pixmap(dpi=300)  # Extraemos la imagen a 300 DPI
+    pix = page.get_pixmap(dpi=300)  # type: ignore # Extraemos la imagen a 300 DPI
     img = Image.open(io.BytesIO(pix.tobytes()))
     return img
+
 
 # Función para conectarse al WebSocket y enviar la consulta
 async def ask_ollama(query):
@@ -47,17 +49,19 @@ async def ask_ollama(query):
             return {"error": "An error occurred while processing the request"}
 
 
-
-
-
-
 # Título de la aplicación
 st.title("Sistema RAG con LLM")
 
 # Crear un selector para elegir entre funcionalidades
 option = st.radio(
     "Selecciona una opción",
-    ("Subir PDF", "Consultar PDF", "Pregunta a la IA", "Pregunta a Ollama", "Gestionar Archivos"),
+    (
+        "Subir PDF",
+        "Consultar PDF",
+        "Pregunta a la IA",
+        "Pregunta a Ollama",
+        "Gestionar Archivos",
+    ),
 )
 
 # Subir un PDF
@@ -80,20 +84,28 @@ if option == "Subir PDF":
         # Crear un selectbox para las colecciones disponibles o ingresar una nueva
         if not collections:
             st.warning("No hay colecciones disponibles en la base de datos.")
-            collection_name = st.text_input("Ingresa el nombre para crear una nueva colección")
+            collection_name = st.text_input(
+                "Ingresa el nombre para crear una nueva colección"
+            )
         else:
-            collections.append("Personalizado")  # Opción adicional para ingresar manualmente
+            collections.append(
+                "Personalizado"
+            )  # Opción adicional para ingresar manualmente
             selected_option = st.selectbox("Selecciona una colección", collections)
-            
+
             # Si selecciona "Personalizado", permitir ingreso manual
             if selected_option == "Personalizado":
-                collection_name = st.text_input("Ingresa el nombre de la nueva colección")
+                collection_name = st.text_input(
+                    "Ingresa el nombre de la nueva colección"
+                )
             else:
                 collection_name = selected_option
 
         # Mostrar el botón para subir el archivo siempre que haya un archivo cargado
         if st.button("Subir archivo"):
-            if collection_name:  # Asegurarse de que el nombre de la colección esté definido
+            if (
+                collection_name
+            ):  # Asegurarse de que el nombre de la colección esté definido
                 with st.spinner("Subiendo el archivo..."):
                     files = {
                         "file": (uploaded_file.name, uploaded_file, "application/pdf")
@@ -101,22 +113,18 @@ if option == "Subir PDF":
                     data = {"collection_name": collection_name}
 
                     response = requests.post(
-                        f"{BACKEND_URL}/pdf", 
-                        data=data,
-                        files=files
+                        f"{BACKEND_URL}/pdf", data=data, files=files
                     )
-                
+
                 if response.status_code == 200:
-                    st.success(f"¡Archivo subido correctamente a la colección '{collection_name}'!")
+                    st.success(
+                        f"¡Archivo subido correctamente a la colección '{collection_name}'!"
+                    )
                     st.json(response.json())
                 else:
                     st.error("Error al subir el archivo. Intenta nuevamente.")
             else:
                 st.error("Por favor ingresa un nombre para la colección.")
-
-
-
-
 
 
 # Consultar un documento PDF
@@ -138,43 +146,51 @@ elif option == "Consultar PDF":
 
                 # Mostrar la respuesta generada por el modelo
                 st.markdown(f"**Respuesta:** {result['answer']}")
-                
+
                 # Mostrar las fuentes de donde se obtuvo la información
                 if "sources" in result and result["sources"]:
                     st.write("**Fuentes:**")
                     for source in result["sources"]:
-                        file_path = urllib.parse.quote(source.get("file_path", "Desconocido"))
+                        file_path = urllib.parse.quote(
+                            source.get("file_path", "Desconocido")
+                        )
                         page_number = int(source.get("page_number", "Desconocido"))
-                        
+
                         # Mostrar de forma estructurada el nombre del documento y la página
                         st.markdown(
                             f"- **Documento:** {file_path} | **Página:** {page_number}"
                         )
-                        
+
                         # Enlace para ver el archivo PDF
                         pdf_url = f"{BACKEND_URL}/pdf/{file_path}"
 
                         # Descargar el archivo PDF
                         pdf_response = requests.get(pdf_url)
-                        
+
                         if pdf_response.status_code == 200:
                             # Convertir la respuesta PDF en un archivo binario
                             pdf_file = io.BytesIO(pdf_response.content)
 
                             # Crear un archivo temporal y escribir los datos del PDF en él
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf_file:
+                            with tempfile.NamedTemporaryFile(
+                                delete=False, suffix=".pdf"
+                            ) as temp_pdf_file:
                                 temp_pdf_file.write(pdf_file.read())
                                 temp_pdf_path = temp_pdf_file.name
 
                             # Extraer la imagen de la página relevante
                             page_img = extract_page_image(temp_pdf_path, page_number)
-                            
+
                             # Mostrar la página extraída como imagen
-                            st.image(page_img, caption=f"Página {page_number} del documento", use_container_width=True)
+                            st.image(
+                                page_img,
+                                caption=f"Página {page_number} del documento",
+                                use_container_width=True,
+                            )
 
                             # Botón para ver el documento completo con un key único
                             button_key = f"view_pdf_{file_path}_{page_number}"
-                            if st.button('Ver documento completo', key=button_key):
+                            if st.button("Ver documento completo", key=button_key):
                                 st.write(f"Ver documento completo: {pdf_url}")
                         else:
                             st.error("No se pudo descargar el archivo PDF.")
@@ -184,8 +200,6 @@ elif option == "Consultar PDF":
                 st.error("Error al obtener una respuesta. Intenta de nuevo.")
         else:
             st.error("Por favor, introduce una consulta.")
-
-
 
 
 # Preguntar algo a la IA
@@ -219,7 +233,7 @@ elif option == "Pregunta a Ollama":
                     response = asyncio.run(ask_ollama(ollama_query))
 
                     # Mostrar la respuesta de Ollama
-                    if "answer" in response:
+                    if isinstance(response, dict) and "answer" in response:
                         st.markdown(f"**Respuesta de la IA:** {response}")
                     else:
                         st.error("Error al obtener respuesta de Ollama.")
@@ -227,7 +241,6 @@ elif option == "Pregunta a Ollama":
                     st.error(f"Ocurrió un error al conectar con el servidor: {e}")
         else:
             st.error("Por favor, introduce una pregunta a Ollama.")
-
 
 
 # Gestionar Archivos (Ver, Eliminar, Actualizar)

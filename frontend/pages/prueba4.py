@@ -1,14 +1,15 @@
 import streamlit as st
 import ollama
-from typing import Dict, Generator
+from typing import List, Dict, Generator
 
-def ollama_generator(model_name: str, messages: Dict) -> Generator:
+
+def ollama_generator(model_name: str, messages: List[Dict[str, str]]) -> Generator:
     print(f"[PRUEBA4.py] llega esto en messager: {messages}")
     print(f"[PRUEBA4.py] tipo: {type(messages)}")
-    stream = ollama.chat(
-        model=model_name, messages=messages, stream=True)
+    stream = ollama.chat(model=model_name, messages=messages, stream=True)
     for chunk in stream:
-        yield chunk['message']['content']
+        yield chunk["message"]["content"]
+
 
 st.title("Ollama with Streamlit demo")
 if "selected_model" not in st.session_state:
@@ -18,7 +19,7 @@ if "messages" not in st.session_state:
 
 # Obtener la respuesta de ollama.list()
 response = ollama.list()
-#st.write("Response from ollama.list():", response)  # Imprime la respuesta para ver la estructura
+# st.write("Response from ollama.list():", response)  # Imprime la respuesta para ver la estructura
 
 # Acceder a los nombres de los modelos correctamente
 if "models" in response:
@@ -41,7 +42,7 @@ if prompt := st.chat_input("How could I help you?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = st.write_stream(ollama_generator(
-            st.session_state.selected_model, st.session_state.messages))
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response})
+        response = st.write_stream(
+            ollama_generator(st.session_state.selected_model, st.session_state.messages)
+        )
+    st.session_state.messages.append({"role": "assistant", "content": response})

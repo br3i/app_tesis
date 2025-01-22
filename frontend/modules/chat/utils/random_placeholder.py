@@ -1,5 +1,6 @@
 import random
 
+
 class PlaceholderWithWeights:
     def __init__(self, placeholders):
         self.placeholders = placeholders
@@ -11,20 +12,23 @@ class PlaceholderWithWeights:
         for i, _ in enumerate(self.placeholders):
             # Si el placeholder ha sido usado recientemente, reducir su peso
             if self.placeholders[i] in self.history[-3:]:  # Por ejemplo, los últimos 3
-                self.weights[i] = 0.5
+                self.weights[i] = 0
             else:
-                self.weights[i] = 1.0
+                self.weights[i] = 1
 
     def get_next_placeholder(self):
         self.adjust_weights()
-        chosen_index = random.choices(range(len(self.placeholders)), weights=self.weights, k=1)[0]
+        chosen_index = random.choices(
+            range(len(self.placeholders)), weights=self.weights, k=1
+        )[0]
         self.history.append(self.placeholders[chosen_index])
-        
+
         # Limitar el tamaño del historial para evitar acumulaciones largas
         if len(self.history) > 10:
             self.history.pop(0)
-        
+
         return self.placeholders[chosen_index]
+
 
 # Lista de placeholders que quieres tener aquí, no en el archivo principal
 PLACEHOLDER_LIST = [
@@ -57,8 +61,9 @@ PLACEHOLDER_LIST = [
     "Dime qué documento estás buscando...",
     "Busca algo relacionado con normativas...",
     "¿En qué puedo asistirte hoy con la documentación?",
-    "¿Te gustaría encontrar información académica? 📚"
+    "¿Te gustaría encontrar información académica? 📚",
 ]
+
 
 # Función para obtener una instancia de PlaceholderWithWeights
 def get_placeholder_manager():

@@ -23,10 +23,15 @@ USERNAME_ADMINISTRADOR = os.getenv("USERNAME_ADMINISTRADOR", "Not Found")
 NOMBRE_ADMINISTRADOR = os.getenv("NOMBRE_ADMINISTRADOR", "Not Found")
 APELLIDO_ADMINISTRADOR = os.getenv("APELLIDO_ADMINISTRADOR", "Not Found")
 CONTRASENA_ADMINISTRADOR = os.getenv("CONTRASENA_ADMINISTRADOR", "Not Found")
-CONTRASENA_ADMINISTRADOR_HASH = bcrypt.hashpw(CONTRASENA_ADMINISTRADOR.encode(), bcrypt.gensalt()).decode()
-ROLES_ADMINISTRADOR = json.loads(os.getenv("ROLES_ADMINISTRADOR", []))
-TIME_ZONE = os.getenv('TIME_ZONE')
+CONTRASENA_ADMINISTRADOR_HASH = bcrypt.hashpw(
+    CONTRASENA_ADMINISTRADOR.encode(), bcrypt.gensalt()
+).decode()
+ROLES_ADMINISTRADOR = json.loads(
+    os.getenv("ROLES_ADMINISTRADOR", '["admin", "user", "viewer"]')
+)
+TIME_ZONE = os.getenv("TIME_ZONE", "America/Guayaquil")
 tz = pytz.timezone(TIME_ZONE)
+
 
 # Crear tablas si no existen
 def init_db(reset=False):
@@ -38,7 +43,7 @@ def init_db(reset=False):
     Base.metadata.create_all(bind=engine)  # Crea las tablas si no existen
 
     # Verificar si ya existe un usuario administrador
-    admin_user = db.query(User).filter(User.roles.op('@>')(["admin"])).first()
+    admin_user = db.query(User).filter(User.roles.op("@>")(["admin"])).first()
 
     if not admin_user:
         # Si no existe, crear uno nuevo
@@ -51,12 +56,12 @@ def init_db(reset=False):
             password=CONTRASENA_ADMINISTRADOR_HASH,
             roles=ROLES_ADMINISTRADOR,
             created_at=datetime.now(tz),
-            updated_at=datetime.now(tz)
+            updated_at=datetime.now(tz),
         )
         db.add(new_admin)
         db.commit()
         db.refresh(new_admin)
         print("Usuario administrador creado.")
-    
+
     db.close()  # Cerrar la sesión
     print("Base de datos inicializada correctamente.")

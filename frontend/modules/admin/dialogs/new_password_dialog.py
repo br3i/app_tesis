@@ -2,6 +2,7 @@ import streamlit as st
 from modules.admin.utils.validate_password import validate_password
 from modules.admin.utils.change_password import change_password
 
+
 @st.dialog("Restablecer contraseña", width="small")
 def new_password_dialog():
     # Captura en tiempo real del valor de la nueva contraseña
@@ -19,16 +20,15 @@ def new_password_dialog():
             - Debe contener al menos un número.
             - Debe contener al menos un carácter especial de los siguientes [@$!%*?&].
             """
-        )
+        ),
     )
 
-    
     # Repetir la contraseña para confirmación
     new_password_2 = st.text_input(
-        "Repetir contraseña:", 
-        key="password_repeat", 
-        type="password", 
-        placeholder="Repite tu nueva contraseña"
+        "Repetir contraseña:",
+        key="password_repeat",
+        type="password",
+        placeholder="Repite tu nueva contraseña",
     )
 
     # Validar criterios de la contraseña
@@ -44,16 +44,21 @@ def new_password_dialog():
         # Confirmar cambio de contraseña
         if st.button("Cambiar contraseña"):
             if not all_criteria_met:
-                st.error("La contraseña no cumple con todos los criterios.", icon=':material/gpp_maybe:')
+                st.error(
+                    "La contraseña no cumple con todos los criterios.",
+                    icon=":material/gpp_maybe:",
+                )
             elif new_password != new_password_2:
-                st.error("Las contraseñas no coinciden.", icon=':material/gpp_maybe:')
+                st.error("Las contraseñas no coinciden.", icon=":material/gpp_maybe:")
             else:
                 st.session_state["code_sent"] = None
                 st.session_state["code_right"] = None
                 user_id = st.session_state.get("user_id")
-                if change_password(user_id, new_password):
+                if user_id is not None and change_password(user_id, new_password):
                     st.session_state["password_changed"] = True
-                    st.success("¡Contraseña cambiada exitosamente!", icon=':material/check:')
+                    st.success(
+                        "¡Contraseña cambiada exitosamente!", icon=":material/check:"
+                    )
                     st.rerun()
                 else:
                     st.session_state["password_changed"] = False

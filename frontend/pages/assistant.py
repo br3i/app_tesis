@@ -190,9 +190,9 @@ try:
                 "use_considerations": st.session_state.use_considerations,
                 "n_documents": st.session_state.n_documents,
                 "word_list": st.session_state.word_list,
-                "feedback_type": feedback_data.get("type", ""),
-                "score": feedback_data.get("score", ""),
-                "text": feedback_data.get("text", ""),
+                "feedback_type": feedback_data.get("type", "") if feedback_data else "",
+                "score": feedback_data.get("score", "") if feedback_data else "",
+                "text": feedback_data.get("text", "") if feedback_data else "",
             }
 
             # st.write(json_data)

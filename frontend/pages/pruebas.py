@@ -1,4 +1,3 @@
-
 # !!!!!!!!!!!!!!!!!!!!PAGINACION EN DATAFRAME
 # import streamlit as st
 # import pandas as pd
@@ -49,18 +48,8 @@
 #         st.markdown(f"Page **{current_page}** of **{total_pages}** ")
 
 
-
 #     pages = split_frame(dataset, batch_size)
 #     pagination.dataframe(data=pages[current_page - 1], use_container_width=True)
-
-
-
-
-
-
-
-
-
 
 
 #!!!!!!!!!!!!!!!USO DE ECHO PARA EL CODIGO
@@ -88,8 +77,6 @@
 # st.write('Done!')
 
 
-
-
 #!!!!!!!!!!!!!!RESTART UPLOAD_FILE
 # import streamlit as st
 
@@ -113,24 +100,6 @@
 #     st.rerun()
 
 # st.write("Uploaded files:", st.session_state["uploaded_files"])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -202,15 +171,6 @@
 # )
 
 
-
-
-
-
-
-
-
-
-
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!DOCUMENTACION DE LA FUNCION EDITAR USUARIOS
 # import streamlit as st
@@ -229,7 +189,6 @@
 # MAX_FIRSTNAME_LENGTH = int(st.secrets.get('MAX_FIRSTNAME_LENGTH', 'Not found'))
 # MAX_LASTNAME_LENGTH = int(st.secrets.get('MAX_LASTNAME_LENGTH', 'Not found'))
 # MAX_USERNAME_LENGTH = int(st.secrets.get('MAX_USERNAME_LENGTH', 'Not found'))
-
 
 
 # def convert_int64_to_int(value):
@@ -278,7 +237,7 @@
 #     options_roles = roles['roles']  # Lista de roles disponibles
 #     print("\n-----------------------------------------------------------")
 #     print("\n\n[options_roles] : ", options_roles)
-    
+
 #     placeholder_info = st.empty()
 #     placeholder_success = st.empty()
 #     placeholder_warning = st.empty()
@@ -298,12 +257,11 @@
 #                 "last_name": user['last_name'],
 #                 "roles": user['roles'],  # Mantener roles como lista
 #             })
-        
+
 #         # Convertir la lista de usuarios a un DataFrame
 #         users_df = pd.DataFrame(users_data)
 #         print("\n\n[users_df] : \n", users_df)
 
-            
 
 #         # Guardar una copia en session_state
 #         if "users_df" not in st.session_state:
@@ -318,7 +276,7 @@
 #         if 'original_roles_df' not in st.session_state:
 #             st.session_state['original_roles_df'] = st.session_state['users_df'].copy()
 #         #!!!!!
-        
+
 #         # Crear una copia independiente de los datos originales
 #         original_df = st.session_state.users_df.copy()
 
@@ -329,7 +287,7 @@
 #         st.session_state.users_df['roles'] = st.session_state.users_df['roles'].apply(
 #             lambda x: x if isinstance(x, list) else (x.split(', ') if isinstance(x, str) else [])
 #         )
-        
+
 #         print("\n[roles después de la transformación] : \n", st.session_state.users_df['roles'])
 
 #         with st.status("Valores en st.session_state"):
@@ -340,7 +298,7 @@
 #         # Sección de edición de roles
 #         with st.expander("Edición de Roles"):
 #             col1, col2 = st.columns([0.3, 0.7], gap="small", vertical_alignment="center")
-            
+
 #             with col1:
 #                 # Seleccionar un usuario
 #                 selected_user = st.selectbox(
@@ -386,12 +344,12 @@
 #                 st.session_state.selected_roles = updated_roles  # Actualizar roles seleccionados
 #                 st.session_state.users_df = st.session_state.users_df.copy()  # Mantener la copia actualizada
 #                 #st.rerun()
-        
+
 #         # Asegurarse de que la columna 'roles' siempre sea una lista de cadenas
 #         st.session_state.users_df['roles'] = st.session_state.users_df['roles'].apply(
 #             lambda x: x if isinstance(x, list) else (x.split(', ') if isinstance(x, str) else [])
 #         )
-        
+
 #         try:
 #             print("\n\n[edited_df] (antes de la edición) : \n", edited_df)
 #         except NameError:
@@ -490,110 +448,65 @@
 #                 st.success("✅ Datos actualizados correctamente en el estado.")
 #             else:
 #                 print("\n\n[Sin diferencias] Los datos editados coinciden con los originales.")
-#                 st.success("✅ No hay cambios entre los datos editados y los originales.")      
+#                 st.success("✅ No hay cambios entre los datos editados y los originales.")
 #     else:
 #         placeholder_warning.warning("⚠️ No hay archivos disponibles en este momento.")
 
 # show_df_users()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import streamlit as st
 
 ms = st.session_state
-if "themes" not in ms: 
-  ms.themes = {"current_theme": "light",
-                    "refreshed": True,
-                    
-                    "light": {"theme.base": "dark",
-                              "theme.backgroundColor": "black",
-                              "theme.primaryColor": "#c98bdb",
-                              "theme.secondaryBackgroundColor": "#5591f5",
-                              "theme.textColor": "white",
-                              "theme.textColor": "white",
-                              "button_face": "🌜"},
+if "themes" not in ms:
+    ms.themes = {
+        "current_theme": "light",
+        "refreshed": True,
+        "light": {
+            "theme.base": "dark",
+            "theme.backgroundColor": "black",
+            "theme.primaryColor": "#c98bdb",
+            "theme.secondaryBackgroundColor": "#5591f5",
+            "theme.textColor": "white",
+            "theme.textColor": "white",
+            "button_face": "🌜",
+        },
+        "dark": {
+            "theme.base": "light",
+            "theme.backgroundColor": "white",
+            "theme.primaryColor": "#5591f5",
+            "theme.secondaryBackgroundColor": "#82E1D7",
+            "theme.textColor": "#0a1464",
+            "button_face": "🌞",
+        },
+    }
 
-                    "dark":  {"theme.base": "light",
-                              "theme.backgroundColor": "white",
-                              "theme.primaryColor": "#5591f5",
-                              "theme.secondaryBackgroundColor": "#82E1D7",
-                              "theme.textColor": "#0a1464",
-                              "button_face": "🌞"},
-                    }
-  
 
 def ChangeTheme():
-  previous_theme = ms.themes["current_theme"]
-  tdict = ms.themes["light"] if ms.themes["current_theme"] == "light" else ms.themes["dark"]
-  for vkey, vval in tdict.items(): 
-    if vkey.startswith("theme"): st._config.set_option(vkey, vval)
+    previous_theme = ms.themes["current_theme"]
+    tdict = (
+        ms.themes["light"]
+        if ms.themes["current_theme"] == "light"
+        else ms.themes["dark"]
+    )
+    for vkey, vval in tdict.items():
+        if vkey.startswith("theme"):
+            st.set_option(vkey, vval)
 
-  ms.themes["refreshed"] = False
-  if previous_theme == "dark": ms.themes["current_theme"] = "light"
-  elif previous_theme == "light": ms.themes["current_theme"] = "dark"
+    ms.themes["refreshed"] = False
+    if previous_theme == "dark":
+        ms.themes["current_theme"] = "light"
+    elif previous_theme == "light":
+        ms.themes["current_theme"] = "dark"
 
 
-btn_face = ms.themes["light"]["button_face"] if ms.themes["current_theme"] == "light" else ms.themes["dark"]["button_face"]
+btn_face = (
+    ms.themes["light"]["button_face"]
+    if ms.themes["current_theme"] == "light"
+    else ms.themes["dark"]["button_face"]
+)
 st.button(btn_face, on_click=ChangeTheme)
 
 if ms.themes["refreshed"] == False:
-  ms.themes["refreshed"] = True
-  st.rerun()
+    ms.themes["refreshed"] = True
+    st.rerun()

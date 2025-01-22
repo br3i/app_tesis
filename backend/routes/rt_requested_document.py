@@ -1,10 +1,10 @@
-from models.database import get_db
 from models.requested_document import RequestedDocument
 from models.database import SessionLocal
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -28,10 +28,10 @@ async def get_all_requested_documents():
         )
         return [
             RequestedDocumentsResponse(
-                id=requested_document.id,
-                last_requested_at=requested_document.last_requested_at,
-                requested_count=requested_document.requested_count,
-                document_id=requested_document.document_id,
+                id=requested_document.id,  # type: ignore
+                last_requested_at=requested_document.last_requested_at,  # type: ignore
+                requested_count=requested_document.requested_count,  # type: ignore
+                document_id=requested_document.document_id,  # type: ignore
             )
             for requested_document in requested_documents
         ]

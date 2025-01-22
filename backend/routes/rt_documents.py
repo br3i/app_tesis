@@ -14,14 +14,7 @@ from services.documents.save_docs.upload_service import (
     check_document_exists,
     save_document,
 )
-from services.documents.save_docs.process_any_document_service import (
-    process_pdf,
-    process_word_document,
-    process_text_document,
-    process_image,
-    process_ppt,
-    process_excel,
-)
+from services.documents.save_docs.process_any_document_service import process_pdf
 from services.metrics.save_metrics.save_metrics_docs import save_metrics_docs
 
 #!!!!!!!!!!!CORREGIR EL USO DE GET_DOCUMENTS, que sea solo aqui
@@ -34,7 +27,7 @@ from dotenv import load_dotenv
 dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.env")
 load_dotenv(dotenv_path)
 
-DOCUMENTS_PATH = os.getenv("DOCUMENTS_PATH")
+DOCUMENTS_PATH = os.getenv("DOCUMENTS_PATH", "./documents")
 
 router = APIRouter()
 
@@ -106,7 +99,20 @@ async def document_post(collection_name: str = Form(...), file: UploadFile = Fil
 
         # Si el documento no existe, guardar el archivo
         save_start = time.time()
-        file_path, document = save_document(file, collection_name)
+        result = save_document(file, collection_name)
+        if result is None:
+            elapsed_time = time.time() - start_time
+            final_cpu, final_memory = get_system_usage()
+            return JSONResponse(
+                {
+                    "status": "Error",
+                    "message": "No se pudo guardar el archivo.",
+                    "execution_time": elapsed_time,
+                    "cpu_usage": {"initial": initial_cpu, "final": final_cpu},
+                    "memory_usage": {"initial": initial_memory, "final": final_memory},
+                }
+            )
+        file_path, document = result
         save_time = time.time() - save_start
 
         # Medir recursos después de guardar
@@ -147,7 +153,7 @@ async def document_post(collection_name: str = Form(...), file: UploadFile = Fil
         #!!!!
 
         process_start = time.time()
-        doc_len, chunk_len = process_pdf(file_path, collection_name, document.id)
+        doc_len, chunk_len = process_pdf(file_path, collection_name, document.id)  # type: ignore
         process_time = time.time() - process_start
 
         # Medir recursos después del procesamiento
@@ -190,7 +196,9 @@ async def document_post(collection_name: str = Form(...), file: UploadFile = Fil
             "final": final_memory,
         }
 
-        save_metrics_docs(db, document.id, execution_times, cpu_usage, memory_usage)
+        save_metrics_docs(
+            db, document.id, execution_times, cpu_usage, memory_usage  # type: ignore
+        )
 
         # Si todo va bien, retornar un mensaje de éxito con los datos asociados
         return JSONResponse(
@@ -259,18 +267,17 @@ async def edit_document(
     # Actualizar los valores del documento con los nuevos datos
     try:
         # Actualizar campos
-        document.name = name
-        document.collection_name = collection_name
-        document.created_at = created_at
+        document.name = name  # type: ignore
+        document.collection_name = collection_name  # type: ignore
+        document.created_at = created_at  # type: ignore
 
         # Actualizar el campo 'path' basándose en el nuevo 'name'
         new_path = f"./documents/{name}"
-        document.path = new_path  # El nuevo path basado en el nombre recibido
-
+        document.path = new_path  # type: ignore # El nuevo path basado en el nombre recibido
         # Renombrar el archivo físico si el nombre del documento ha cambiado
-        if old_path != new_path and os.path.exists(old_path):
+        if str(old_path) != str(new_path) and os.path.exists(str(old_path)):
             # Renombrar el archivo físico en el sistema
-            os.rename(old_path, new_path)
+            os.rename(str(old_path), str(new_path))
 
         # Guardar los cambios en la base de datos
         db.commit()
@@ -310,10 +317,10 @@ async def delete_document(document_id: int):
             raise HTTPException(status_code=404, detail="Documento no encontrado")
 
         # Eliminar el archivo físico del sistema (si existe)
-        if os.path.exists(document.path):
-            os.remove(document.path)
+        if os.path.exists(str(document.path)):
+            os.remove(str(document.path))
 
-        if document.embeddings_uuids:
+        if document.embeddings_uuids:  # type: ignore
             print("[rt_documents] ingresa en el condicional")
             collection = return_collection(document.collection_name)
             print(f"[rt_documents] collection: {collection}")
@@ -322,8 +329,13 @@ async def delete_document(document_id: int):
 
             for id_embedding in embeddings_to_delete:
                 try:
-                    collection.delete(ids=id_embedding)
-                    print(f"Embeddings con ID {id_embedding} eliminado exitosamente.")
+                    if collection is not None:
+                        collection.delete(ids=id_embedding)  # type: ignore
+                        print(
+                            f"Embeddings con ID {id_embedding} eliminado exitosamente."
+                        )
+                    else:
+                        print(f"Collection not found for document {document.id}")
                 except Exception as e:
                     print(f"Error al eliminar embedding con ID {id_embedding}: {e}")
         else:
