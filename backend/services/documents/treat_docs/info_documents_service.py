@@ -198,13 +198,22 @@ def process_paragraphs(paragraphs):
     return article_entity
 
 def get_resolution(text):
-    search_patterns = [
-        r"RESOLUCI[ÓO]N \d{3}\s*\.CP\.\d{4,5}"  # Patrón para encontrar las resoluciones
-    ]
-
+    # Limpieza de espacios y formato antes de realizar la búsqueda
     clean_patterns = [
         (r"\s+", ""),  # Eliminar todos los espacios dentro de la resolución
+        (r"\s*\.?\s*CP\s*\.\s*", ".CP."),  # Asegurar que no haya espacios alrededor de ".CP."
         (r"(RESOLUCI[ÓO]N)(\d+)", r"\1 \2")  # Volver a poner un solo espacio entre "RESOLUCIÓN" y el número
+    ]
+
+    # Limpiar el texto utilizando los patrones de limpieza
+    for pattern, replacement in clean_patterns:
+        text = re.sub(pattern, replacement, text)
+
+    # Patrones de búsqueda de la resolución
+    search_patterns = [
+        r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}",  # El patrón más limpio, ya que el texto ya ha sido limpiado
+        r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}",
+        r"RESOLUCI[ÓO]N \d{3,4}\.CP\.\d{4,5}"
     ]
 
     # Buscar la primera coincidencia utilizando los patrones de búsqueda
@@ -216,13 +225,15 @@ def get_resolution(text):
             break  # Detener la búsqueda después de encontrar la primera coincidencia
 
     if not resolution:
-        return None  # Si no se encuentra ninguna resolución
+        return None, None  # Si no se encuentra ninguna resolución
 
-    # Limpiar la resolución encontrada
-    for pattern, replacement in clean_patterns:
-        resolution = re.sub(pattern, replacement, resolution)
+    # Extraer el número de resolución
+    match_number = re.search(r"RESOLUCI[ÓO]N (\d{3,4})", resolution)
+    number_resolution = None
+    if match_number:
+        number_resolution = int(match_number.group(1))  # Extraemos el número de resolución
 
-    return resolution
+    return resolution, number_resolution
 
 
 def get_resolve(text):
@@ -282,7 +293,7 @@ def get_info_document(document_path):
         # print("\n\n[info_docs_service ]Total_text:\n\n", total_text[-10000:]) #total_text[-70000:]
         #print("\n\n\t[info_docs_service ] final_page:", final_page)
         # time.sleep(5)
-        resolution = get_resolution(text_name_resolution)
+        resolution, number_resolution = get_resolution(text_name_resolution)
         
         #Imprimir la resolución encontrada
         # print("\n[info_docs_service] Resolución encontrada:", resolution)
@@ -312,7 +323,7 @@ def get_info_document(document_path):
         #     for i, (article_entity, delimiter) in enumerate(articles_entities):
         #         print(f"{i + 1}: {article_entity.strip()}")
         
-        return resolution, articles_entities, copia, resolve, final_page+1
+        return resolution, number_resolution, articles_entities, copia, resolve, final_page+1
     else:
         print("No se encontro el archivo.")
         return None, None, None, None

@@ -135,10 +135,28 @@ def sync_deleted_users():
     save_config(config)
     print(f"{len(users_to_remove)} usuarios eliminados del archivo de configuración.")
 
+def logout_user(username):
+    """Cierra la sesión del usuario especificado."""
+    config = load_config()  # Cargar la configuración actual
+    user_data = config['credentials']['usernames'].get(username)
+
+    if user_data:
+        # Actualizar el campo logged_in a false
+        user_data['logged_in'] = False
+        # Opcional: Actualizar la fecha de cierre de sesión, si deseas llevar un registro
+        user_data['last_login'] = None  # O usa datetime.now(tz).isoformat() si quieres registrar algo
+        # Guardar los cambios en el archivo de configuración
+        save_config(config)
+        print(f"Usuario '{username}' cerrado correctamente.")
+    else:
+        print(f"Usuario '{username}' no encontrado en el archivo de configuración.")
+
+
 # Función para manejar el cierre de sesión
 def handle_logout():
     username = st.session_state.get('username')
     if username:
+        print("[config_data] username :", username)
         logout_user(username)
         st.session_state.clear()
         st.rerun()

@@ -103,10 +103,11 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"El archivo {file_path} no existe.")
 
-        resolution, articles_entities, copia, resolve, resolve_page = get_info_document(file_path)
-        print(f"\n\n-resolution 1: \n{resolution}")
+        resolution, number_resolution, articles_entities, copia, resolve, resolve_page = get_info_document(file_path)
+        # print(f"\n\n-resolution 1: \n{resolution}")
         if not resolution:
             resolution = [f'{os.path.splitext(os.path.basename(file_path))[0]}']
+        # print(f"\n\n-number_resolution: \n{number_resolution}")
         # print("\n----------------------------------------------------------")
         # print(f"\n-resolution 2: \n{resolution}")
         # print(f"\n----------------------------------------------------------")
@@ -158,15 +159,18 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
             "considerations": considerations,  # Asignamos las consideraciones a la metadata
             "copia": copia
         }
-        # print(f"\n\n----------------------------------------------------------")
-        # print(f"\n\nBase metadata: {base_metadata}")
-        #time.sleep(10)
+
+        if number_resolution is not None:
+            base_metadata["number_resolution"] = str(number_resolution)
+        print(f"\n\n-------------------------[proc_any_doc_srv]---------------------------------")
+        print(f"\n\nBase metadata: \n{base_metadata}")
+        # time.sleep(10000)
 
         # Crear la metadata para los fragmentos de 'resolve'
         for idx, chunk in enumerate(text_chunks):
             #time.sleep(5)
             try:
-                print(f"[process_resolve_and_articles] Procesando fragmento {idx + 1}...")
+                print(f"\n[process_resolve_and_articles] Procesando fragmento {idx + 1}...")
 
                 # Verificar tipo de chunk y sus atributos
                 #print(f"[process_resolve_and_articles] Tipo de chunk: {type(chunk)}")

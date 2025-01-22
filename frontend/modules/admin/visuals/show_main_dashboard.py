@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 from modules.admin.utils.active_users import active_users
+from modules.admin.utils.get_requested_document import get_len_requested_document
 from modules.admin.utils.notifications_created import notifications_created
 from modules.documents.decorators.get_documents_from_db import get_len_documents_from_db
 
@@ -114,7 +115,7 @@ def show_main_dashboard():
         placeholder_users.metric("Usuarios Registrados", n_users, help="Usuarios registrados en la Base de Datos", label_visibility="visible", border=True)
     
     with st.spinner('Cargando métricas de Documentos Consultados...'):
-        n_documents_consulted = 400
+        n_documents_consulted = get_len_requested_document()
         placeholder_docs_consulted.metric("Documentos Consultados", n_documents_consulted, help="Documentos consultados", label_visibility="visible", border=True)
     
     with st.spinner('Cargando métricas de Documentos Cargados...'):
@@ -122,5 +123,5 @@ def show_main_dashboard():
         placeholder_docs_loaded.metric("Documentos Cargados", n_documents_loaded, help="Documentos cargados en la Base de Datos", label_visibility="visible", border=True)
     
     with st.spinner('Cargando métricas de Reportes Generados...'):
-        n_reports = 56  # Aquí puedes sustituir con la función real para obtener reportes generados
+        n_reports = 0  # Aquí puedes sustituir con la función real para obtener reportes generados
         placeholder_reports.metric("Reportes Generados", n_reports, help="Reportes Generados", label_visibility="visible", border=True)

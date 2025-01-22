@@ -11,6 +11,7 @@ from .user import User
 from .code import Code
 from .notification import Notification
 from .metric import Metric
+from .feedback import Feedback
 from datetime import datetime
 from dotenv import load_dotenv
 

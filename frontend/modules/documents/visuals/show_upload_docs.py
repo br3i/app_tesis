@@ -13,10 +13,10 @@ MAX_FILES_UPLOAD = st.secrets.get('MAX_FILES_UPLOAD', 'Not found')
 
 def show_upload_docs():
     placeholder_info = st.empty()
-    # placeholder_button = st.empty()
     placeholder_success = st.empty()
     placeholder_error = st.empty()
     placeholder_warning = st.empty()
+    placeholder_button2 = st.empty()
     #uploaded_files = st.file_uploader("Elige un archivo", type=['pdf', 'doc', 'docx', 'txt', 'rtf', 'odf', 'jpg', 'jpge', 'png', 'tif', 'tiff', 'gif', 'bmp', 'ppt', 'pptx', 'xls', 'xlsx'], accept_multiple_files=True, help="Seleccione los archivos")
     if 'uf_key' not in st.session_state:
             st.session_state['uf_key'] = str(uuid.uuid4())
@@ -27,6 +27,13 @@ def show_upload_docs():
     if uploaded_files:
         if len(uploaded_files) > MAX_FILES_UPLOAD:
             placeholder_error.error(f":material/gpp_maybe: Solo puedes subir hasta {MAX_FILES_UPLOAD} archivos cada vez.")
+            with placeholder_button2:
+                if st.button("Recargar", type="primary", key="btn_recarga_2"):
+                    placeholder_success.empty()
+                    placeholder_error.empty()
+                    placeholder_warning.empty()
+                    reset_uf()
+                    st.rerun()
         else:
             with st.spinner("Cargando..."):
                 with st.expander("Documentos seleccionados"):
@@ -140,7 +147,7 @@ def show_upload_docs():
                 else:
                     placeholder_error.error(":material/gpp_maybe: Por favor ingresa un nombre para la colección.")
             with placeholder_button:
-                if st.button("Recargar"):
+                if st.button("Recargar", key="btn_recarga_1"):
                     placeholder_success.empty()
                     placeholder_error.empty()
                     placeholder_warning.empty()

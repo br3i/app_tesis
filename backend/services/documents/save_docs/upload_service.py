@@ -1,4 +1,3 @@
-import time
 import os
 import pytz
 from datetime import datetime
@@ -100,7 +99,6 @@ def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
 
     except Exception as e:
         print("[upload_service] entra con la exception")
-        time.sleep(4)
         print(f"Error al guardar el archivo o registrar en la base de datos: {e}")
         db.rollback()
         if file_path and os.path.exists(file_path):
@@ -109,54 +107,3 @@ def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
         return None
     finally:
         db.close()
-    
-# # Función para guardar el documento en la base de datos
-# def save_document_to_db(db: Session, filename: str, collection_name: str, file_path: str):
-#     print(f"[save_document_to_db] db {db}")
-#     print(f"[save_document_to_db] filenam {filename}")
-#     print(f"[save_document_to_db] col_n {collection_name}")
-#     print(f"[save_document_to_db] f_p {file_path}")
-#     file_path = str(Path(file_path))
-#     document = Document(
-#         name=filename,
-#         collection_name=collection_name,
-#         path=file_path,
-#         created_at=datetime.now()  # Guarda la fecha y hora de subida
-#     )
-#     try:
-#         db.add(document)
-#         db.commit()
-#         db.refresh(document)  # Obtener el documento recién creado
-#         return document
-#     except Exception as e:
-#         print(f"Error al guardar el documento: {e}")
-#         db.rollback()  # Deshacer los cambios si algo falla
-#         return None
-
-# # Función para guardar el archivo y registrar el documento en la base de datos
-# def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH, db: Session = None):
-#     print(f"[upload_service] Llega con estos valores file: {file}")
-#     print(f"[upload_service] Llega con estos valores coll_na: {collection_name}")
-#     print(f"[upload_service] Llega con estos valores sav_di: {save_directory}")
-#     print(f"[upload_service] Llega con estos valores db: {db}")
-#     try:        
-#         # Crear directorio si no existe
-#         if not os.path.exists(save_directory):
-#             os.makedirs(save_directory)
-#             print(f"Directorio creado: {save_directory}")
-        
-#         # Guardar el archivo
-#         file_path = os.path.join(save_directory, file.filename)
-#         with open(file_path, "wb") as buffer:
-#             buffer.write(file.file.read())
-#         print(f"Archivo guardado en: {file_path}")
-        
-#         # Guardar en la base de datos
-#         if db is None:
-#             db = next(get_db())
-#         save_document_to_db(db, file.filename, collection_name, file_path)
-        
-#         return file_path
-#     except Exception as e:
-#         print(f"Error al guardar el archivo: {e}")
-#         return None

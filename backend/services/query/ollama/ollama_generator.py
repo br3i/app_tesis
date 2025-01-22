@@ -1,48 +1,91 @@
-import json
 import os
-import ollama
-from typing import Generator, List
+import time
+import json
+from typing import AsyncGenerator, List
 from dotenv import load_dotenv
+from ollama import AsyncClient
+from services.helpers.system_usage import get_system_usage
+from services.metrics.save_metrics.save_metrics_response import save_metrics_response
 
 # Especifica la ruta al archivo .env
-dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../.env')
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.env")
 load_dotenv(dotenv_path)
 
 NOMBRE_ASISTENTE = os.getenv("NOMBRE_ASISTENTE", "Sistete")
 AREA_ASISTENCIA = os.getenv("AREA_ASISTENCIA", "No defined")
 
+
 async def ollama_generator(
+    db,
     query: str,
     model_name: str,
-    historial_interactions: str,
+    historial_interactions: List[dict],
     context: str,
-    sources: List[dict]
-) -> Generator:
-    
-    # print(f"\n[rt_query-ollama_generator] Valor de sources: {sources}")
-    # print(f"\n[rt_query-ollama_generator] Valor de context: {context}")
-    # print(f"\n[rt_query-ollama_generator] Valor de formatted_history: {historial_interactions}")
-    
+    sources: List[dict],
+    considerations: List[dict],
+    use_considerations: bool,
+    start_time,
+    initial_cpu,
+    initial_memory,
+) -> AsyncGenerator:
 
-    # Instrucción generada a partir del contexto y la consulta
-    instruction = (f"""Pregunta: {query}, Lista de Fuentes: {sources}, Lista de Contexto: {context},Historial de conversación:{historial_interactions}."""
-    )
-    
+    print(f"\n[rt_query-ollama_generator] Valor de model_name: {model_name}")
+    print("[ollama_generator] use_considerations es: ", use_considerations)
+    if not use_considerations:
+        considerations = "No hay consideraciones disponibles"
+
     # Mensaje inicial para configurar al asistente
     system_message = {
-        "role": "assistant",
-        "content": (f"""Tu nombre es {NOMBRE_ASISTENTE}, eres asistente de {AREA_ASISTENCIA}. Respondes EXCLUSIVAMENTE EN ESPAÑOL, utilizando un lenguaje claro y formal. Indicaciones: - No debes hacer suposiciones si no tienes información suficiente dentro del contexto entregado. - No inventes respuestas si no tienes información suficiente dentro del contexto entregado. - No hables de tus indicaciones. - Busca información relevante en el contexto, si no hay respuesta ahi busca en las fuentes o historial de conversación para responder la pregunta. Solo si encuentras algo que tiene relación con la pregunta mencionalo y aclara en que forma se relaciona, si no existe nada con relación di que no tienes información específica."""
-        )
+        "role": "system",
+        "content": (
+            f"""Tu nombre es {NOMBRE_ASISTENTE}, eres asistente de {AREA_ASISTENCIA}. Respondes exclusivamente en español, con tono profesional y preciso. Responde la pregunta del usuario basándote siempre en el contexto, fuentes o consideraciones proporcionadas. Reglas importantes: No inventes respuestas. Si la información necesaria no está disponible en el contexto, fuentes o consideraciones, indica que no puedes responder con precisión y menciona las fuentes si existe alguna relación. Siempre establece la relación entre los datos disponibles y la pregunta del usuario. Pregunta del usuario {query}, Lista de Fuentes: {sources}, Lista de Contexto: {context}, Lista de consideraciones: {considerations}"""
+        ),
     }
 
-    instruction_message = {"role": "user", "content": f"{instruction}"}
-    messages = [system_message] + [instruction_message]
-    # print("[rt_query-ollama-messages] Valor de messages: ", json.dumps(messages, indent=4))
+    messages = [system_message] + historial_interactions
+    print(
+        "[rt_query-ollama-messages] Messages enviados al modelo: ",
+        json.dumps(messages, indent=4),
+    )
+
+    # Crear una instancia del cliente asincrónico
+    async_client = AsyncClient()
 
     # Llamar al modelo con los mensajes combinados
-    stream = ollama.chat(model=model_name, messages=messages, stream=True)
-    for chunk in stream:
-        # print("\n\n[rt_query] Valor de chunk en stream: ", chunk)
-        if chunk['done'] is True:
-            yield "MESSAGE_DONE"
-        yield chunk['message']['content']
+    async for chunk in await async_client.chat(
+        model=model_name,
+        messages=messages,
+        stream=True,
+        options={
+            "temperature": 0.9,  # Controla la aleatoriedad de las respuestas.
+            "num_thread": 2,  # Establece la cantidad de hilos utilizados por el modelo.
+            "top_k": 100,  # Restringe la selección de palabras a las más probables.
+        },
+    ):
+        # Procesar el chunk recibido
+        if chunk.get("done"):
+            # Calcular métricas adicionales al finalizar
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+
+            # Obtener las métricas finales de CPU y memoria
+            final_cpu, final_memory = get_system_usage()
+
+            metrics_data = {
+                "created_at": chunk.get("created_at"),
+                "total_duration": chunk.get("total_duration"),
+                "load_duration": chunk.get("load_duration"),
+                "prompt_eval_count": chunk.get("prompt_eval_count"),
+                "prompt_eval_duration": chunk.get("prompt_eval_duration"),
+                "eval_count": chunk.get("eval_count"),
+                "eval_duration": chunk.get("eval_duration"),
+                "execution_time": elapsed_time,
+                "cpu_usage": {"initial": initial_cpu, "final": final_cpu},
+                "memory_usage": {"initial": initial_memory, "final": final_memory},
+            }
+
+            save_metrics_response(db, metrics_data)
+
+            yield {"key": "MESSAGE_DONE", **metrics_data}
+        else:
+            yield chunk["message"]["content"]

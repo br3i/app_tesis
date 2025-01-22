@@ -1,19 +1,29 @@
 import re
-def formatted_history(history_interactions):
-    # print("[formatted_history] llega con : ", history_interactions)
 
-    # Filtramos solo los valores 'query' y 'full_response' de cada interacción
-    formatted_data = []
-    for interaction in history_interactions:
-        if interaction.get('full_response') is not None:
-            query = interaction.get('query').replace("\n", " ")
-            query = re.sub(r'\s{2,}', ' ', query)
-            full_response = interaction.get('full_response').replace("\n", " ")
-            full_response = re.sub(r'\s{2,}', ' ', full_response)
-            formatted_data.append({
-                'user': query,
-                'assistant': full_response
-            })
+def formatted_history(interactions):
     
-    # print("[formatted_history] datos formateados: ", formatted_data)
-    return formatted_data
+    replace_patterns = [
+        (r"[\n\r\f]", " "),
+        (r"\s{2,}", " ")
+    ]
+    
+    def clean_text(text):
+        """Aplica los patrones de limpieza a un texto."""
+        for pattern, replacement in replace_patterns:
+            text = re.sub(pattern, replacement, text)
+        return text.strip()
+
+    formatted_list = []
+    for interaction in interactions:
+        if 'query' in interaction and interaction['query']:
+            formatted_list.append({
+                "role": "user",
+                "content": clean_text(interaction['query'])
+            })
+        if 'full_response' in interaction and interaction['full_response']:
+            formatted_list.append({
+                "role": "assistant",
+                "content": clean_text(interaction['full_response'])
+            })
+
+    return formatted_list

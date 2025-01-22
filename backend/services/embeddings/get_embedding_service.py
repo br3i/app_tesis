@@ -43,7 +43,7 @@ def get_embeddings(text_chunk, retries=3, delay=2):
             if embeddings is None:
                 raise ValueError(f"El modelo no devolvió embeddings válidos. Respuesta: {response}")
 
-            print(f"Embeddings generados exitosamente en el intento {attempt + 1}.")
+            # print(f"Embeddings generados exitosamente en el intento {attempt + 1}.")
             return embeddings
 
         except Exception as e:

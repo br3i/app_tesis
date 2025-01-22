@@ -17,13 +17,6 @@
 # import services.database_conection_service
 
 
-
-
-
-
-
-
-
 # load_dotenv()
 
 # # Inicializa FastAPI
@@ -63,7 +56,7 @@
 # async def websocket_endpoint(websocket: WebSocket):
 #     print("WebSocket connection established.")
 #     await websocket.accept()
-    
+
 #     try:
 #         while True:
 #             # Recibiendo el mensaje del cliente (Streamlit)
@@ -105,18 +98,12 @@
 #         print(f"Error: {e}")
 
 
-
-
 # @app.post("/collection_names")
 # async def get_collection_names():
 #     # Lógica para obtener las colecciones desde tu base de datos
 #     collection_names = services.database_conection_service.get_collection_names()
 #     print("Las colecciones que se obtienen de la base: ", collection_names)
 #     return JSONResponse(content={"collections": collection_names})
-
-
-
-
 
 
 # @app.post("/ai")
@@ -140,16 +127,16 @@
 # async def pdf_post(collection_name: str = Form(...), file: UploadFile = File(...)):
 #      # Verificar los datos recibidos
 #     print(f"Datos recibidos: collection_name={collection_name}, file={file.filename}")
-    
+
 #     # Mostrar el nombre del archivo antes de guardarlo
 #     print(f"Archivo recibido: {file.filename}")
-    
+
 #     # Identificador único del documento (podría ser el nombre del archivo o algún otro identificador)
 #     document_id = os.path.splitext(file.filename)[0]
-    
+
 #     # Verificar si el documento ya existe en la base de datos de embeddings
 #     exists = services.upload_service.check_document_exists(document_id, collection_name)
-    
+
 #     if exists:
 #         # Si el documento ya existe, respondemos que no es necesario guardarlo
 #         response = {
@@ -166,30 +153,22 @@
 
 #     # Procesar el PDF y generar embeddings
 #     doc_len, chunk_len = services.process_documents_service.process_pdf(file_path, collection_name)
-    
+
 #     # Imprimir la cantidad de documentos y fragmentos procesados
 #     print(f"Cantidad de documentos procesados: {doc_len}")
 #     print(f"Cantidad de fragmentos procesados: {chunk_len}")
-    
+
 #     response = {
 #         "status": "Successfully Uploaded",
 #         "filename": file.filename,
 #         "doc_len": doc_len,
 #         "chunks": chunk_len,
 #     }
-    
+
 #     # Imprimir la respuesta antes de devolverla
 #     print(f"Respuesta: {response}")
-    
+
 #     return response
-
-
-
-
-
-
-
-
 
 
 # @app.post("/ask_pdf")
@@ -274,7 +253,7 @@
 # # Ejecutar el servidor con Uvicorn
 # # Para ejecutar el servidor, usa el siguiente comando:
 # # uvicorn app-fa:app --reload --host 0.0.0.0 --port 8080
-
+#!!!!! -> 4 instancias = uvicorn app-fa:app --reload --host 0.0.0.0 --port 8080 --workers 4
 
 
 # app-fa.py
@@ -285,17 +264,13 @@ import ollama
 from ollama import chat
 from fastapi import FastAPI
 from fastapi import WebSocket, WebSocketDisconnect
-#!!!! SI HAY ERROR DESCOMENTAR
-# from routes.rt_files import router as files_router
-#!!!!!!!!
-from routes.rt_query import router as query_router
-from routes.rt_documents import router as documents_router
-from routes.rt_db_nr import router as db_nr_router
-from routes.rt_yaml import router as yaml_router
-from routes.rt_db_r import router as db_r_router
-from routes.rt_user import router as user_router
 from routes.rt_code import router as code_router
+from routes.rt_db_nr import router as db_nr_router
+from routes.rt_documents import router as documents_router
 from routes.rt_notification import router as notification_router
+from routes.rt_query import router as query_router
+from routes.rt_requested_document import router as requested_document_router
+from routes.rt_user import router as user_router
 from models import init_db
 from dotenv import load_dotenv
 
@@ -306,20 +281,18 @@ load_dotenv()
 app = FastAPI()
 
 # Inicializar la base de datos
-reset_db = os.getenv("RESET_DB", "false").lower() == "true"  # Leer de las variables de entorno
+reset_db = (
+    os.getenv("RESET_DB", "false").lower() == "true"
+)  # Leer de las variables de entorno
 init_db(reset=reset_db)
 
 # Incluir las rutas
-#!!!!! DESCOMENTAR SI HAY ERROR
-# app.include_router(files_router)
-#!!!!!!!!!!!
-app.include_router(query_router)
-app.include_router(documents_router)
-app.include_router(db_nr_router)
-app.include_router(yaml_router)
-app.include_router(db_r_router)
-app.include_router(user_router)
 app.include_router(code_router)
+app.include_router(db_nr_router)
+app.include_router(documents_router)
 app.include_router(notification_router)
+app.include_router(query_router)
+app.include_router(requested_document_router)
+app.include_router(user_router)
 
 # Puedes seguir añadiendo más routers de acuerdo a la organización de tus rutas

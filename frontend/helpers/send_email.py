@@ -179,9 +179,9 @@ def send_email(email, username=None, email_type=None):
         to = [{"email": f"{email}", "name": f"{username}"}]
 
         # Configuración y envío de email
-        #api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-        #send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=html_content, sender=sender, subject=subject)
-        #api_response = api_instance.send_transac_email(send_smtp_email)
+        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=html_content, sender=sender, subject=subject)
+        api_response = api_instance.send_transac_email(send_smtp_email)
         print(f"[send_email] email: {email}")
         print(f"[send_email] username: {username}")
         print(f"[send_email] email_type: {email_type}")
