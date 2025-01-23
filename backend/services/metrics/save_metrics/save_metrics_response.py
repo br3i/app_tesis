@@ -1,25 +1,7 @@
 import json
 from sqlalchemy.orm import Session
 from models.metric import Metric
-from models.metric_association import MetricAssociation
-
-# {
-
-#     "load_duration": 2079163600,
-#     "prompt_eval_count": 1833,
-#     "prompt_eval_duration": 81458000000,
-#     "eval_count": 242,
-#     "eval_duration": 20594000000,
-#     "execution_time": 105.93487906455994,
-#     "cpu_usage": {
-#         "initial": 29.8,
-#         "final": 38.8
-#     },
-#     "memory_usage": {
-#         "initial": 67.4,
-#         "final": 82.8
-#     },
-# }
+from models.metric_extra_response import MetricExtraResponse
 
 
 def save_metrics_response(db: Session, metrics_data):
@@ -29,18 +11,39 @@ def save_metrics_response(db: Session, metrics_data):
     # memory_initial = metrics_data["memory_usage"]["initial"]
     # memory_final = metrics_data["memory_usage"]["final"]
 
-    # metrics = Metric(
-    #     total_time=execution_times.get(
-    #         "total_time", 0
-    #     ),  #     "total_duration": 104325859600,
-    #     save_time=execution_times.get("save_time", 0),
-    #     process_time=execution_times.get("process_time", 0),
-    #     cpu_initial=cpu_usage.get("initial", 0),
-    #     cpu_save=cpu_usage.get("save", 0),
-    #     cpu_process=cpu_usage.get("process", 0),
-    #     cpu_final=cpu_usage.get("final", 0),
-    #     memory_initial=memory_usage.get("initial", 0),
-    #     memory_save=memory_usage.get("save", 0),
-    #     memory_process=memory_usage.get("process", 0),
-    #     memory_final=memory_usage.get("final", 0),
-    # )
+    metrics = Metric(
+        total_time=metrics_data.get("total_time", 0),
+        cpu_initial=metrics_data.get("cpu_usage", {}).get("initial", 0),
+        cpu_final=metrics_data.get("cpu_usage", {}).get("final", 0),
+        memory_initial=metrics_data.get("memory_usage", {}).get("initial", 0),
+        memory_final=metrics_data.get("memory_usage", {}).get("final", 0),
+    )
+
+    # Guardar las métricas en la base de datos
+    db.add(metrics)
+    db.commit()
+    db.refresh(metrics)
+
+    # Crear la asociación entre la métrica y el documento
+    metric_extra_response = MetricExtraResponse(
+        metric_id=metrics.id,
+        load_model_duration=metrics_data.get("load_duration", 0),
+        number_tokens_prompt=metrics_data.get("prompt_eval_count", 0),
+        time_evaluating_prompt=metrics_data.get("prompt_eval_duration", 0),
+        number_tokens_response=metrics_data.get("eval_count", 0),
+        time_generating_response=metrics_data.get("eval_duration", 0),
+    )
+
+    # Guardar la asociación en la base de datos
+    db.add(metric_extra_response)
+    db.commit()
+
+    # Opcionalmente, actualizar las métricas con las asociaciones
+    db.refresh(metrics)
+    db.refresh(metric_extra_response)
+
+    print(
+        f"Metricas guardadas: {metrics}, metricas extra guardadas: {metric_extra_response}"
+    )
+
+    return metrics, metric_extra_response

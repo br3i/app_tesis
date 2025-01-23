@@ -42,7 +42,9 @@ class Document(Base):
         overlaps="document_ref",
     )
 
-    metric_associations = relationship("MetricAssociation", back_populates="document")
+    document_metrics = relationship(
+        "MetricExtraDocument", back_populates="document", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Document(id={self.id}, name={self.name}, collection_name={self.collection_name}, created_at={self.created_at}, embeddings_uuids={self.embeddings_uuids})>"

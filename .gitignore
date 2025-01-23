@@ -1,6 +1,9 @@
 venv/*
 
+backend/db_nr/*
 backend/documents/*
 backend/.env
+
+**/__pycache__/
 
 frontend/.streamlit/secrets.toml

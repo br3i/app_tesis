@@ -219,6 +219,60 @@ async def document_post(collection_name: str = Form(...), file: UploadFile = Fil
         elapsed_time = time.time() - start_time
         final_cpu, final_memory = get_system_usage()
         print(f"Error en document_post: {e}")
+
+        # Intentamos recargar el objeto document desde la base de datos
+        try:
+            document = db.query(Document).filter_by(id=document.id).first()
+            if not document:
+                raise HTTPException(status_code=404, detail="Documento no encontrado.")
+        except Exception as db_error:
+            print(f"Error al recargar el documento desde la base de datos: {db_error}")
+            # Si ocurre un error al recargar el documento, puedes devolver el error apropiado
+            return JSONResponse(
+                {
+                    "status": "Error",
+                    "message": "Error al recuperar el documento desde la base de datos.",
+                    "execution_time": elapsed_time,
+                    "cpu_usage": {"initial": initial_cpu, "final": final_cpu},
+                    "memory_usage": {"initial": initial_memory, "final": final_memory},
+                }
+            )
+
+        if "document" in locals():
+            # Borrar el archivo físico si se guardó
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+            # Si el documento tiene embeddings, eliminarlos
+            print(f"[rt_documents] exception, document: {document}")
+            if document.embeddings_uuids:  # type: ignore
+                print(
+                    "[rt_documents] El documento tiene embeddings, intentando eliminarlos."
+                )
+                collection = return_collection(document.collection_name)
+                print(f"[rt_documents] collection: {collection}")
+                embeddings_to_delete = document.embeddings_uuids
+                print(f"[rt_documents] embeddings_to_delete: {embeddings_to_delete}")
+
+                for id_embedding in embeddings_to_delete:
+                    try:
+                        if collection is not None:
+                            collection.delete(ids=id_embedding)  # type: ignore
+                            print(
+                                f"Embeddings con ID {id_embedding} eliminado exitosamente."
+                            )
+                        else:
+                            print(f"Collection not found for document {document.id}")
+                    except Exception as embedding_error:
+                        print(
+                            f"Error al eliminar embedding con ID {id_embedding}: {embedding_error}"
+                        )
+
+            # Eliminar el registro de la base de datos
+            db.delete(document)
+            db.commit()
+
+        db.rollback()  # Si ocurre un error, deshacer los cambios
         return JSONResponse(
             {
                 "status": "Error",
@@ -227,11 +281,6 @@ async def document_post(collection_name: str = Form(...), file: UploadFile = Fil
                 "cpu_usage": {"initial": initial_cpu, "final": final_cpu},
                 "memory_usage": {"initial": initial_memory, "final": final_memory},
             }
-        )
-        db.rollback()  # Si ocurre un error, deshacer los cambios
-        raise HTTPException(
-            status_code=500,
-            detail="Error al actualizar el documento. Intente nuevamente.",
         )
     finally:
         db.close()

@@ -17,14 +17,10 @@ TIME_ZONE = os.getenv("TIME_ZONE", "America/Guayaquil")
 class RequestedDocument(Base):
     __tablename__ = "requested_documents"  # Nombre de la tabla en la base de datos
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # Identificador único
-    last_requested_at = Column(
-        DateTime, default=datetime.now(pytz.timezone(TIME_ZONE))
-    )  # Última vez que se solicitó
-    requested_count = Column(Integer, default=1)  # Contador de solicitudes
-    document_id = Column(
-        Integer, ForeignKey("documents.id"), nullable=False
-    )  # Relación con el documento
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    last_requested_at = Column(DateTime, default=datetime.now(pytz.timezone(TIME_ZONE)))
+    requested_count = Column(Integer, default=1)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
 
     # Relación con el modelo Document
     document = relationship(

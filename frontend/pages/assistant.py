@@ -255,9 +255,7 @@ if query:
                 message_data = {
                     "user_session_uuid": st.session_state.user_session_uuid,
                     "use_considerations": st.session_state.use_considerations,
-                    "interaction_uuid": interaction_uuid,
                     "model_name": MODEL_LLM_BASE,
-                    "history_messages": st.session_state.history_messages,
                 }
                 # Enviar un mensaje inicial
                 ws.send(json.dumps(message_data))

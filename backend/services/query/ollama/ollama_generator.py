@@ -22,9 +22,8 @@ async def ollama_generator(
     historial_interactions: List[dict],
     context: str,
     sources: str,
-    considerations: str,
+    considerations: List[dict],
     use_considerations: bool,
-    start_time,
     initial_cpu,
     initial_memory,
 ) -> AsyncGenerator:
@@ -32,13 +31,13 @@ async def ollama_generator(
     print(f"\n[rt_query-ollama_generator] Valor de model_name: {model_name}")
     print("[ollama_generator] use_considerations es: ", use_considerations)
     if not use_considerations:
-        considerations = "No hay consideraciones disponibles"
+        considerations = "No hay consideraciones disponibles"  # type: ignore
 
     # Mensaje inicial para configurar al asistente
     system_message = {
         "role": "system",
         "content": (
-            f"""Tu nombre es {NOMBRE_ASISTENTE}, eres asistente de {AREA_ASISTENCIA}. Respondes exclusivamente en español, con tono profesional y preciso. Responde la pregunta del usuario basándote siempre en el contexto, fuentes o consideraciones proporcionadas. Reglas importantes: No inventes respuestas. Si la información necesaria no está disponible en el contexto, fuentes o consideraciones, indica que no puedes responder con precisión y menciona las fuentes si existe alguna relación. Siempre establece la relación entre los datos disponibles y la pregunta del usuario. Pregunta del usuario {query}, Lista de Fuentes: {sources}, Lista de Contexto: {context}, Lista de consideraciones: {considerations}"""
+            f"""Tu nombre es {NOMBRE_ASISTENTE}, eres asistente de {AREA_ASISTENCIA}. Respondes exclusivamente en español, con tono profesional y preciso. Busca únicamente dentro del contexto, fuentes o consideraciones y responde la pregunta del usuario. No inventes respuestas, si la información necesaria no está disponible en el contexto, fuentes o consideraciones, indica que no puedes responder con precisión y menciona las fuentes si existe alguna relación. Siempre establece la relación entre los datos disponibles y la pregunta del usuario. Pregunta del usuario {query}, Lista de Fuentes: {sources}, Lista de Contexto: {context}, Lista de consideraciones: {considerations}"""
         ),
     }
 
@@ -64,10 +63,6 @@ async def ollama_generator(
     ):
         # Procesar el chunk recibido
         if chunk.get("done"):
-            # Calcular métricas adicionales al finalizar
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-
             # Obtener las métricas finales de CPU y memoria
             final_cpu, final_memory = get_system_usage()
 
@@ -79,7 +74,6 @@ async def ollama_generator(
                 "prompt_eval_duration": chunk.get("prompt_eval_duration"),
                 "eval_count": chunk.get("eval_count"),
                 "eval_duration": chunk.get("eval_duration"),
-                "execution_time": elapsed_time,
                 "cpu_usage": {"initial": initial_cpu, "final": final_cpu},
                 "memory_usage": {"initial": initial_memory, "final": final_memory},
             }

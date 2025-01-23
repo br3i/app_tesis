@@ -45,8 +45,6 @@ class Code(Base):
     # Relación inversa con el modelo User
     user = relationship("User", back_populates="codes")
 
-    metric_associations = relationship("MetricAssociation", back_populates="code")
-
     def __repr__(self):
         return f"<Code(code={self.code}, status={self.status}, created_at={self.created_at}, expires_at={self.expires_at}, used_at={self.used_at})>"
 

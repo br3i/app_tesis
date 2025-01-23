@@ -25,4 +25,4 @@ def formatted_considerations(data):
             }
         )
 
-    return " ".join(formatted_list)
+    return formatted_list

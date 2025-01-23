@@ -282,7 +282,6 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
 
         db: Session = SessionLocal()
-        start_time = time.time()
         initial_cpu, initial_memory = get_system_usage()
 
         response_metrics = {
@@ -301,14 +300,11 @@ async def websocket_endpoint(websocket: WebSocket):
             message_data = json.loads(data)
 
             user_session_uuid = message_data["user_session_uuid"]
-            interaction_uuid = message_data["interaction_uuid"]
             model_name = message_data.get("model_name")
-            history_messages = message_data.get("history_messages")
             use_considerations = message_data.get("use_considerations")
 
             # print("[rt_query] use_considerations: ", use_considerations)
             # print("[rt_query] user_session_uuid: ", user_session_uuid)
-            # print("[rt_query] interaction_uuid: ", interaction_uuid)
             # print("[rt_query] model_name: ", model_name)
             # print("[rt_query] history_messages: ", history_messages)
 
@@ -328,7 +324,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         "considerations"
                     ]
                 )
-                # considerations = session_data[user_session_uuid]['interactions'][-1]['considerations']
 
                 response_uuid = str(uuid.uuid4())
 
@@ -341,7 +336,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     sources,
                     considerations,
                     use_considerations,
-                    start_time=start_time,
                     initial_cpu=initial_cpu,
                     initial_memory=initial_memory,
                 ):
@@ -351,8 +345,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     }
                     # Enviar cada fragmento al cliente con el mismo ID
                     await websocket.send_text(json.dumps(response_chunk))
-        elapsed_time = time.time() - start_time
-        print(f"[rt_query] elapsed_time : {elapsed_time}")
     except WebSocketDisconnect:
         print("Disconnected client")
         # Al desconectarse, limpiamos la sesión de inactividad si ha pasado el límite

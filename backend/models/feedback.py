@@ -43,7 +43,5 @@ class Feedback(Base):
         DateTime, default=lambda: datetime.now(pytz.timezone(TIME_ZONE))
     )
 
-    metric_associations = relationship("MetricAssociation", back_populates="feedback")
-
     def __repr__(self):
         return f"<Feedback(id={self.id}, model_name={self.model_name}, query={self.query}, context={self.context}, full_response={self.full_response}, sources={self.sources}, use_considerations={self.use_considerations}, n_documents={self.n_documents}, word_list={self.word_list}, feedback_type={self.feedback_type}, score={self.score}, text={self.text}, created_at={self.created_at})>"

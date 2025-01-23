@@ -47,8 +47,6 @@ class User(Base):
         "Notification", back_populates="user", cascade="all, delete-orphan"
     )
 
-    metric_associations = relationship("MetricAssociation", back_populates="user")
-
     # Método para validar los roles antes de asignarlos
     def set_roles(self, roles):
         if all(role in ALLOWED_ROLES for role in roles):

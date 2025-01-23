@@ -5,13 +5,7 @@ import pytz
 from sqlalchemy.orm import Session
 from models.database import SessionLocal
 from .database import Base, engine
-from .document import Document
-from .requested_document import RequestedDocument
 from .user import User
-from .code import Code
-from .notification import Notification
-from .metric import Metric
-from .feedback import Feedback
 from datetime import datetime
 from dotenv import load_dotenv
 
