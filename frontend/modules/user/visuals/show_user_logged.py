@@ -6,6 +6,7 @@ from modules.settings.utils.load_theme_extra_config import load_theme_extra_conf
 
 theme_extra_config = load_theme_extra_config()
 
+
 def show_user_logged():
     # Crear pestañas para las diferentes funcionalidades
     tabs = st.tabs(["Crear Usuarios", "Editar Usuarios", "Eliminar Usuarios"])
@@ -15,10 +16,14 @@ def show_user_logged():
         with st.spinner("Cargando..."):
             show_create_users()
     with tabs[1]:
-        st.header(f':{theme_extra_config["secondary_users_color"]}[Usuarios Disponibles]')
+        st.header(
+            f':{theme_extra_config["secondary_users_color"]}[Usuarios Disponibles]'
+        )
         with st.spinner("Cargando..."):
             show_df_users()
     with tabs[2]:
-        st.header(f':{theme_extra_config["secondary_users_color"]}[Usuarios Disponibles]')
+        st.header(
+            f':{theme_extra_config["secondary_users_color"]}[Usuarios Disponibles]'
+        )
         with st.spinner("Cargando..."):
             show_df_dlt_users()

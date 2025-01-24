@@ -323,10 +323,16 @@ def get_resolve_to_embed(text):
     # Convertir todo a minúsculas
     text = text.lower()
 
+    # Convertir la ñ para no perderla después de la normalización
+    text = text.replace("ñ", "\001")
+
     # Eliminar tildes y acentos
     text = "".join(
         c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
     )
+
+    # Restaurar la "ñ" (reemplazar el carácter no imprimible por "ñ")
+    text = text.replace("\001", "ñ")
 
     # Lista de patrones y sus reemplazos
     replacements = [

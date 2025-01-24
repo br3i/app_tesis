@@ -1,15 +1,15 @@
 import streamlit as st
+import uuid
 import json
 import requests
 import websocket
-import uuid
 from streamlit_feedback import streamlit_feedback
 from modules.chat.utils.message_generator import message_generator
 from modules.chat.utils.remove_words import remove_word
 from modules.chat.utils.treat_query import treat_query
 
 # from modules.chat.visuals.show_chat_component import model_selector, show_sources
-from modules.chat.visuals.show_chat_component import show_sources
+from modules.chat.visuals.show_chat_component import show_sources_via_ws
 from modules.chat.utils.random_placeholder import get_placeholder_manager
 from modules.chat.visuals.show_messages import (
     handle_user_input,
@@ -228,19 +228,20 @@ if query:
 
         if response.status_code == 200:
             result = response.json()
-            print("[assistant] result: ", result)
+            # print("[assistant] result: ", result)
             sources = result.get("sources", "")
-            print("[assistant] Sources:", sources)
-            print("[assistant] Sources type: ", type(sources))
+            # print("[assistant] Sources:", sources)
+            # print("[assistant] Sources type: ", type(sources))
             interaction_uuid = result.get("interaction_uuid", "")
-            print("[assistant] Sources:", interaction_uuid)
-            print("[assistant] Sources type: ", type(interaction_uuid))
-            if sources == "":
+            # print("[assistant] interaction_uuid:", interaction_uuid)
+            # print("[assistant] interaction_uuid type: ", type(interaction_uuid))
+
+            if sources == "" or sources == "No hay fuentes disponibles":
                 placeholder_info = st.info(
                     ":material/info: No se encontraron fuentes relevantes para tu pregunta"
                 )
             elif sources:
-                show_sources(sources)
+                show_sources_via_ws(sources)
 
         # if interaction_uuid not in st.session_state:
         #     print(f"[no encuentra el {interaction_uuid}]")
@@ -250,7 +251,7 @@ if query:
     with st.chat_message("assistant"):
         try:
             # Establecer conexión con el WebSocket
-            ws = websocket.create_connection(BACKEND_WS_URL)
+            ws = websocket.create_connection(f"{BACKEND_WS_URL}/ws")
             if ws.connected:
                 message_data = {
                     "user_session_uuid": st.session_state.user_session_uuid,

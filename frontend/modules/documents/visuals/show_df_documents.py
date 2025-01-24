@@ -131,10 +131,15 @@ def show_df_documents():
                     }
                 )
 
-        cols = st.columns([0.25, 0.75])
+        cols = st.columns([1, 1, 10], gap="small")
         with cols[0]:
             # Guardar cambios después de editar solo las filas modificadas
-            if st.button("Guardar Cambios"):
+            if st.button(
+                ":material/save:",
+                use_container_width=True,
+                key="btn_save_df_docs",
+                type="primary",
+            ):
                 if rows_to_update:
                     with st.spinner("Guardando cambios..."):
                         for row in rows_to_update:
@@ -166,6 +171,11 @@ def show_df_documents():
                         "No se detectaron cambios para actualizar."
                     )
         with cols[1]:
-            st.button("Restaurar", on_click=reset_df)
+            st.button(
+                ":material/refresh:",
+                on_click=reset_df,
+                use_container_width=True,
+                key="btn_reset_df_docs",
+            )
     else:
         placeholder_warning.warning("⚠️ No hay archivos disponibles en este momento.")

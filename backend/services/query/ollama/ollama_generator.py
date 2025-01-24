@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import asyncio
 from typing import AsyncGenerator, List
 from dotenv import load_dotenv
 from ollama import AsyncClient
@@ -26,6 +27,7 @@ async def ollama_generator(
     use_considerations: bool,
     initial_cpu,
     initial_memory,
+    cancel_event: asyncio.Event,
 ) -> AsyncGenerator:
 
     print(f"\n[rt_query-ollama_generator] Valor de model_name: {model_name}")
@@ -37,7 +39,7 @@ async def ollama_generator(
     system_message = {
         "role": "system",
         "content": (
-            f"""Tu nombre es {NOMBRE_ASISTENTE}, eres asistente de {AREA_ASISTENCIA}. Respondes exclusivamente en español, con tono profesional y preciso. Busca únicamente dentro del contexto, fuentes o consideraciones y responde la pregunta del usuario. No inventes respuestas, si la información necesaria no está disponible en el contexto, fuentes o consideraciones, indica que no puedes responder con precisión y menciona las fuentes si existe alguna relación. Siempre establece la relación entre los datos disponibles y la pregunta del usuario. Pregunta del usuario {query}, Lista de Fuentes: {sources}, Lista de Contexto: {context}, Lista de consideraciones: {considerations}"""
+            f"""Tu nombre es {NOMBRE_ASISTENTE}, eres asistente de {AREA_ASISTENCIA}. Responde la pregunta del usuario, únicamente en español, con tono profesional y preciso. Si la información necesaria no está disponible en el contexto, fuentes o consideraciones, indica que no puedes responder con precisión y menciona las fuentes, pero siempre establece la relación entre los datos disponibles y la pregunta del usuario. Pregunta del usuario {query}, Lista de Fuentes: {sources}, Lista de Contexto: {context}, Lista de consideraciones: {considerations}"""
         ),
     }
 
@@ -61,6 +63,10 @@ async def ollama_generator(
             "top_k": 85,  # Restringe la selección de palabras a las más probables. 40 - 100
         },
     ):
+        if cancel_event.is_set():
+            print("[ollama_generator] Cancelado por desconexión.")
+            break
+
         # Procesar el chunk recibido
         if chunk.get("done"):
             # Obtener las métricas finales de CPU y memoria

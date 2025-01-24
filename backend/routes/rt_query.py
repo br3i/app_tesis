@@ -1,14 +1,14 @@
 # routes/routes_query.py
 import os
 import time
-import asyncio
 import json
 import uuid
 import pytz
+import asyncio
 from sqlalchemy.orm import Session
 from models.database import SessionLocal
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from typing import Optional, Generator, List
+from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from services.helpers.system_usage import get_system_usage
@@ -278,20 +278,12 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     user_session_uuid = None
+    cancel_event = asyncio.Event()
 
     try:
 
         db: Session = SessionLocal()
         initial_cpu, initial_memory = get_system_usage()
-
-        response_metrics = {
-            "total_duration": None,
-            "load_duration": None,
-            "prompt_eval_count": None,
-            "prompt_eval_duration": None,
-            "eval_count": None,
-            "eval_duration": None,
-        }
 
         while True:
             # Recibiendo el mensaje del cliente (Streamlit)
@@ -303,10 +295,9 @@ async def websocket_endpoint(websocket: WebSocket):
             model_name = message_data.get("model_name")
             use_considerations = message_data.get("use_considerations")
 
-            # print("[rt_query] use_considerations: ", use_considerations)
-            # print("[rt_query] user_session_uuid: ", user_session_uuid)
-            # print("[rt_query] model_name: ", model_name)
-            # print("[rt_query] history_messages: ", history_messages)
+            print("[rt_query] use_considerations: ", use_considerations)
+            print("[rt_query] user_session_uuid: ", user_session_uuid)
+            print("[rt_query] model_name: ", model_name)
 
             if session_data[user_session_uuid]["interactions"][-1]["query"] is not None:
                 query = session_data[user_session_uuid]["interactions"][-1]["query"]
@@ -319,11 +310,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 sources = formatted_sources(
                     session_data[user_session_uuid]["interactions"][-1]["sources"]
                 )
-                considerations = formatted_considerations(
-                    session_data[user_session_uuid]["interactions"][-1][
-                        "considerations"
-                    ]
+                raw_considerations = session_data[user_session_uuid]["interactions"][
+                    -1
+                ]["considerations"]
+                considerations = (
+                    formatted_considerations(raw_considerations)
+                    if isinstance(raw_considerations, list)
+                    else []
                 )
+                if not isinstance(considerations, list):
+                    considerations = []
 
                 response_uuid = str(uuid.uuid4())
 
@@ -336,8 +332,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     sources,
                     considerations,
                     use_considerations,
-                    initial_cpu=initial_cpu,
-                    initial_memory=initial_memory,
+                    initial_cpu,
+                    initial_memory,
+                    cancel_event,
                 ):
                     response_chunk = {
                         "response_uuid": response_uuid,
@@ -347,6 +344,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(json.dumps(response_chunk))
     except WebSocketDisconnect:
         print("Disconnected client")
+        cancel_event.set()
         # Al desconectarse, limpiamos la sesión de inactividad si ha pasado el límite
         if user_session_uuid in session_data:
             last_interaction_time = session_data[user_session_uuid].get(
@@ -362,6 +360,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 session_data.pop(user_session_uuid)
     except Exception as e:
         print(f"Unexpected error: {e}")
+        cancel_event.set()
     finally:
         db.close()
 

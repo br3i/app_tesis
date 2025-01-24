@@ -1,14 +1,27 @@
 # routes/routes_documents.py
 import time
 import os
+
+import io
+import base64
+
 from sqlalchemy.orm import Session
 from models.database import SessionLocal
 from models.document import Document
 from urllib.parse import unquote
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    UploadFile,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from services.helpers.return_collection import return_collection
 from services.helpers.system_usage import get_system_usage
+from services.helpers.get_image_page import extract_page_image
 from services.documents.save_docs.upload_service import (
     check_document_exists,
     save_document,
@@ -52,6 +65,90 @@ async def get_documents_from_db():
         }
         for document in documents
     ]
+
+
+# @router.get("/get_page_image")
+# async def get_page_image(file_path: str, resolve_page: int):
+#     try:
+#         # Verificar si el archivo existe en el directorio
+#         file_path = os.path.relpath(file_path, start="documents")
+#         full_path = os.path.join(DOCUMENTS_PATH, file_path)
+#         if not os.path.exists(full_path):
+#             raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+#         # Obtener la imagen de la página solicitada
+#         image = extract_page_image(full_path, resolve_page)
+
+#         # Convertir la imagen a un formato adecuado para enviarla como respuesta
+#         img_byte_arr = io.BytesIO()
+#         image.save(img_byte_arr, format="PNG")
+#         img_byte_arr.seek(0)
+
+#         return StreamingResponse(img_byte_arr, media_type="image/png")
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.websocket("/get_page_images")
+async def get_page_images(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        # Recibir datos de las solicitudes como una lista
+        data = await websocket.receive_json()
+        print("[rt_documents] data: ", data)
+
+        for request in data:
+            try:
+                file_path = request["file_path"]
+                resolve_page = request["resolve_page"]
+
+                # Verificar que el archivo existe
+                file_path = os.path.relpath(file_path, start="documents")
+                full_path = os.path.join("documents", file_path)
+                if not os.path.exists(full_path):
+                    # Enviar un mensaje de error para este archivo/página
+                    await websocket.send_json(
+                        {
+                            "error": f"Archivo no encontrado: {file_path}",
+                            "file_path": file_path,
+                            "resolve_page": resolve_page,
+                        }
+                    )
+                    continue
+
+                # Extraer la imagen de la página
+                image = extract_page_image(full_path, resolve_page)
+
+                # Convertir la imagen a base64 para enviarla por WebSocket
+                img_byte_arr = io.BytesIO()
+                image.save(img_byte_arr, format="PNG")
+                img_byte_arr.seek(0)
+                img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode("utf-8")
+
+                # Enviar la imagen y los metadatos como respuesta
+                await websocket.send_json(
+                    {
+                        "file_path": file_path,
+                        "document_name": os.path.basename(file_path),
+                        "resolve_page": resolve_page,
+                        "image": img_base64,
+                    }
+                )
+            except Exception as e:
+                # Enviar un mensaje de error en caso de fallo
+                await websocket.send_json(
+                    {
+                        "error": str(e),
+                        "file_path": request.get("file_path", "Desconocido"),
+                        "resolve_page": request.get("resolve_page", "Desconocido"),
+                    }
+                )
+
+    except WebSocketDisconnect:
+        print("WebSocket desconectado")
+    except Exception as e:
+        print(f"Error en WebSocket: {e}")
+        await websocket.close()
 
 
 @router.get("/document/{filename}")

@@ -214,10 +214,10 @@ def show_df_users():
             key=st.session_state.df_u_key,
         )
 
-        cols = st.columns([0.25, 0.75])
+        cols = st.columns([1, 1, 10], gap="small")
         with cols[0]:
             # Botón para guardar cambios
-            if st.button("Guardar Cambios", type="primary"):
+            if st.button(":material/save:", type="primary", use_container_width=True):
                 # Comparar los DataFrames para identificar diferencias
                 differences_roles = edited_df.compare(
                     st.session_state["original_roles_df"]
@@ -307,7 +307,12 @@ def show_df_users():
                         "⚠️ No hay cambios entre los datos editados y los originales."
                     )
         with cols[1]:
-            if st.button("Restaurar/Recargar", on_click=reset_df_user):
+            if st.button(
+                ":material/refresh:",
+                on_click=reset_df_user,
+                use_container_width=True,
+                key="btn_refresh_edit_user",
+            ):
                 del st.session_state.users_df
                 del st.session_state.selected_user
                 del st.session_state.selected_roles

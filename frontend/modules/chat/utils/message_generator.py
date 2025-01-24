@@ -2,6 +2,7 @@ import streamlit as st
 import websocket
 import json
 
+
 def message_generator(ws):
     print("[message_generator] Iniciando...")
     try:
@@ -12,13 +13,18 @@ def message_generator(ws):
             print(f"[message_generator] tipo response: {type(response)}")
 
             # Detener el generador al encontrar "MESSAGE_DONE"
-            if isinstance(response.get("content"), dict) and response["content"].get("key") == "MESSAGE_DONE":
+            if (
+                isinstance(response.get("content"), dict)
+                and response["content"].get("key") == "MESSAGE_DONE"
+            ):
                 st.session_state.ollama_times = {
                     "created_at": response["content"].get("created_at"),
                     "total_duration": response["content"].get("total_duration"),
                     "load_duration": response["content"].get("load_duration"),
                     "prompt_eval_count": response["content"].get("prompt_eval_count"),
-                    "prompt_eval_duration": response["content"].get("prompt_eval_duration"),
+                    "prompt_eval_duration": response["content"].get(
+                        "prompt_eval_duration"
+                    ),
                     "eval_count": response["content"].get("eval_count"),
                     "eval_duration": response["content"].get("eval_duration"),
                 }

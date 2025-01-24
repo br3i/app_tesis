@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
 # Especifica la ruta al archivo .env
-dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../.env')
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.env")
 load_dotenv(dotenv_path)
 
 # Variables de entorno para PostgreSQL
@@ -25,6 +25,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base para definir modelos
 Base = declarative_base()
+
 
 # Función para obtener la sesión de base de datos
 def get_db():

@@ -4,11 +4,16 @@ import unicodedata
 
 def treat_query(query):
     treated_query = query.lower()
+
+    treated_query = treated_query.replace("ñ", "\001")
+
     treated_query = "".join(
         c
         for c in unicodedata.normalize("NFD", treated_query)
         if unicodedata.category(c) != "Mn"
     )
+
+    treated_query = treated_query.replace("\001", "ñ")
 
     # Lista de patrones y sus reemplazos
     replacements = [

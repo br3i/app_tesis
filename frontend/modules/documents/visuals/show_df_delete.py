@@ -115,10 +115,10 @@ def show_df_delete():
                 )
 
         # Columna para los botones de acción
-        cols = st.columns([0.35, 0.65])
+        cols = st.columns([1, 1, 10], gap="small")
         with cols[0]:
             # Eliminar los documentos seleccionados
-            if st.button("Eliminar Documentos"):
+            if st.button(":material/delete:", key="btn_dlt_docs", type="primary"):
                 if rows_to_delete:
                     with st.spinner("Eliminando documentos..."):
                         for row in rows_to_delete:
@@ -143,7 +143,7 @@ def show_df_delete():
                     )
         with cols[1]:
             st.button(
-                "Restaurar Valores", on_click=reset_df_dlt
-            )  # Botón para restaurar si se desea
+                ":material/refresh:", on_click=reset_df_dlt, key="btn_reset_dlt_docs"
+            )
     else:
         placeholder_warning.warning("⚠️ No hay archivos disponibles en este momento.")

@@ -99,9 +99,9 @@ def show_df_dlt_users():
                 )
 
         # Columna para los botones de acción
-        cols = st.columns([0.3, 0.7])
+        cols = st.columns([1, 1, 10], gap="small")
         with cols[0]:
-            if st.button("Eliminar Usuarios", type="primary"):
+            if st.button(":material/delete:", type="primary", use_container_width=True):
                 if rows_to_delete:
                     with st.spinner("Eliminando usuarios..."):
                         for row in rows_to_delete:
@@ -126,6 +126,11 @@ def show_df_dlt_users():
                         "⚠️ No se detectaron usuarios seleccionados para eliminar."
                     )
         with cols[1]:
-            st.button("Quitar selección", on_click=reset_df_dlt_user)
+            st.button(
+                ":material/refresh:",
+                on_click=reset_df_dlt_user,
+                use_container_width=True,
+                key="btn_refres_dlt_user",
+            )
     else:
         placeholder_warning.warning("⚠️ No hay usuarios disponibles en este momento.")

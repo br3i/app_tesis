@@ -14,28 +14,32 @@ theme_extra_config = load_theme_extra_config()
 # Crear el placeholder para mostrar mensajes de carga
 placeholder = st.empty()
 
-if 'username_logged' in st.session_state:
-    create_menu(st.session_state['username'])
-    st.title(f'Administración de :{theme_extra_config["primary_users_color"]}[Usuarios :material/group:]')
-    
+if "username_logged" in st.session_state:
+    create_menu(st.session_state["username"])
+    st.title(
+        f'Administración de :{theme_extra_config["primary_users_color"]}[Usuarios :material/group:]'
+    )
+
     show_user_logged()
 else:
     username_logged = None
-    for username, user_data in config['credentials']['usernames'].items():
-        if user_data['logged_in'] and is_session_valid(username):
+    for username, user_data in config["credentials"]["usernames"].items():
+        if user_data["logged_in"] and is_session_valid(username):
             username_logged = username
             break
-    
+
     if username_logged:
         # Restaurar sesión en `st.session_state`
-        st.session_state['username_logged'] = True
-        st.session_state['username'] = username_logged
+        st.session_state["username_logged"] = True
+        st.session_state["username"] = username_logged
 
-        create_menu(st.session_state['username'])
-        st.title(f'Administración de :{theme_extra_config["primary_users_color"]}[Usuarios :material/group:]')
-        
-        show_user_logged()  
+        create_menu(st.session_state["username"])
+        st.title(
+            f'Administración de :{theme_extra_config["primary_users_color"]}[Usuarios :material/group:]'
+        )
+
+        show_user_logged()
 
     else:
         st.info("Ingrese las credenciales para iniciar sesión.")
-        placeholder= create_login()
+        placeholder = create_login()

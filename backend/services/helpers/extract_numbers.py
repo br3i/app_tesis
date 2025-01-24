@@ -2,6 +2,7 @@ import re
 
 patterns = [r"\b\d{3}\b", r"\d+"]
 
+
 def extract_numbers(query) -> list:
     numbers_extracted = []
 
