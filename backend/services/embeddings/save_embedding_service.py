@@ -5,8 +5,8 @@ from services.embeddings.get_embedding_service import get_embeddings
 
 
 def save_embeddings(chunk, collection, document_metadata, id_document, db):
-    print(f"\n\n\n\n------------------[save_embeddings]-------------------")
-    print("\n[save_embedding_service] id_document: ", id_document)
+    # print(f"\n\n\n\n------------------[save_embeddings]-------------------")
+    # print("\n[save_embedding_service] id_document: ", id_document)
     # print("\n[save_embedding_service] db: ", db)
     # print("\n[save_embedding_service] document_metadata['uuid']: ", document_metadata['uuid'])
 
@@ -43,14 +43,14 @@ def save_embeddings(chunk, collection, document_metadata, id_document, db):
             metadatas=[simplified_metadata],  # Los metadatos asociados
         )
 
-        print(
-            f"Embedding guardado para el fragmento {document_metadata['chunk_index']}."
-        )
+        # print(
+        #     f"Embedding guardado para el fragmento {document_metadata['chunk_index']}."
+        # )
 
         try:
             # Recuperar el documento correspondiente
             document = db.query(Document).filter_by(id=id_document).first()
-            print("[\n\nACTUALIZAR EMBEDDING]")
+            # print("[\n\nACTUALIZAR EMBEDDING]")
             # print("[save_embeddings] document antes de actualizar: ", document)
             # print("[save_embeddings] document.embeddings_uuids antes de actualizar: ", document.embeddings_uuids)
             # print("[save_embeddings] document_metadata['uuid']: ", document_metadata['uuid'])

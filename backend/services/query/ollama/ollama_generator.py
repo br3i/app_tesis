@@ -56,9 +56,9 @@ async def ollama_generator(
         messages=messages,
         stream=True,
         options={
-            "temperature": 0.9,  # Controla la aleatoriedad de las respuestas.
-            "num_thread": 2,  # Establece la cantidad de hilos utilizados por el modelo.
-            "top_k": 100,  # Restringe la selección de palabras a las más probables.
+            "temperature": 0.8,  # Controla la aleatoriedad de las respuestas. 0 - 1
+            "num_thread": 2,  # Establece la cantidad de hilos utilizados por el modelo. depende cpu
+            "top_k": 85,  # Restringe la selección de palabras a las más probables. 40 - 100
         },
     ):
         # Procesar el chunk recibido

@@ -11,7 +11,9 @@ from services.embeddings.get_embedding_service import get_embeddings
 
 
 def get_context_sources(query: str, word_list, n_documents):
-    # print(f"\n\n--------------[contex_sources_service] Iniciando búsqueda con query: {query}")
+    print(
+        f"\n\n--------------[contex_sources_service] Iniciando búsqueda con query: {query}"
+    )
     # print(f"[context_sources_service] Número de documentos a buscar: {n_documents}")
     # print(f"[context_sources_service] n_documents type: {type(n_documents)}")
     n_documents = int(n_documents)

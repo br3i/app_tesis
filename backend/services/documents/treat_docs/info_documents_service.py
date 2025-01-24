@@ -1,6 +1,6 @@
-import os
 import PyPDF2
 import re
+import unicodedata
 import time
 
 
@@ -290,10 +290,8 @@ def get_resolve(text):
     ]
 
     resolve_index = None
-    i = 0
     for pattern in patterns:
-        # print("[info_docs_service] get_resolve :", i)
-        i = +1
+        # print("[info_docs_service] get_resolve")
         resolve_index = re.search(pattern, text, flags=re.IGNORECASE)
         if resolve_index:
             break
@@ -307,6 +305,44 @@ def get_resolve(text):
     text = re.sub(r"\s{2,}", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"[\n\r\f]", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"\…{2,}", "FIRMA", text, flags=re.IGNORECASE)
+
+    return text
+
+
+def get_resolve_to_embed(text):
+    """
+    Procesa el texto recibido convirtiéndolo en minúsculas, eliminando tildes y
+    caracteres especiales, excepto puntos y comas.
+
+    Args:
+        text (str): El texto procesado previamente con get_resolve.
+
+    Returns:
+        str: El texto limpio, listo para generar embeddings.
+    """
+    # Convertir todo a minúsculas
+    text = text.lower()
+
+    # Eliminar tildes y acentos
+    text = "".join(
+        c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
+    )
+
+    # Lista de patrones y sus reemplazos
+    replacements = [
+        (r"[^a-z0-9áéíóúüñ%.,:=()/\- ]", ""),  # Eliminar caracteres no permitidos
+        (r"\.\s*-\s*", "."),  # Reemplazar .- o . - por .
+        (r"-{2,}", "-"),  # Reducir guiones consecutivos a uno solo
+        (r"\.{2,}", "."),  # Reducir puntos consecutivos a uno solo
+        (r"\(\.\)", ""),  # Eliminar el punto y los paréntesis (.)
+        (r"/{2,}", "/"),  # Reducir barras consecutivas a una sola
+        (r"\s{2,}", " "),  # Reducir espacios múltiples a uno solo
+        (r";", ","),  # Reemplazar ; por ,
+    ]
+
+    # Aplicar cada reemplazo al texto
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text)
 
     return text
 
@@ -339,6 +375,11 @@ def get_info_document(document_path):
             resolve = resolution + " resuelve: por " + resolve
         # print("\n\n\n[info_docs_service] RESOLVE:\n", resolve)
 
+        resolve_to_embed = get_resolve_to_embed(resolve)
+        # print(f"[info_documents_service] resolve_to_embed: {resolve_to_embed[-1000:]}")
+        print(f"[info_documents_service] len resolve_to_embed: {len(resolve_to_embed)}")
+        # time.sleep(4000)
+
         paragraphs = separate_text_into_paragraphs(total_text)
         # print("\n\n\t [info_docs_service] Paragraphs:", paragraphs)
 
@@ -359,8 +400,9 @@ def get_info_document(document_path):
             articles_entities,
             copia,
             resolve,
+            resolve_to_embed,
             final_page + 1,
         )
     else:
         print("No se encontro el archivo.")
-        return None, None, None, None, None, None
+        return None, None, None, None, None, None, None

@@ -18,14 +18,11 @@ TIME_ZONE = os.getenv("TIME_ZONE", "America/Guayaquil")
 class Document(Base):
     __tablename__ = "documents"  # Nombre de la tabla en la base de datos
 
-    id = Column(
-        Integer, primary_key=True, autoincrement=True
-    )  # Identificador único del documento
-    name = Column(String, nullable=False)  # Nombre del archivo/documento
-    collection_name = Column(
-        String, nullable=False
-    )  # Colección o categoría del documento
-    path = Column(String, nullable=False)  # Ruta del archivo del documento
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    collection_name = Column(String, nullable=False)
+    path = Column(String, nullable=False)
+    physical_path = Column(String, nullable=True)
     created_at = Column(
         DateTime, default=lambda: datetime.now(pytz.timezone(TIME_ZONE))
     )

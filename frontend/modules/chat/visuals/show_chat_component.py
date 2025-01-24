@@ -8,76 +8,7 @@ from modules.chat.utils.extract_page_image import extract_page_image
 BACKEND_URL = st.secrets.get("BACKEND_URL", "Not Found")
 
 #!!!! Que sea un selectbox y pida los elementos del backend
-# def model_selector(models_ollama):
-# if "models" in models_ollama:
-#     # Filtrar modelos que generan respuestas y excluir familias específicas
-#     response_models = [
-#         {
-#             "name": model.model,
-#             "size": model.size,
-#             "family": model.details.family,
-#         }
-#         for model in models_ollama["models"]
-#         if model.details.family not in ["bert", "nomic-bert"]  # Excluir familias de embeddings
-#     ]
-
-#     if response_models:
-#         # Controles para ordenamiento y búsqueda
-#         col1, col2, col3 = st.columns(3)
-
-#         with col1:
-#             search_query = st.text_input(
-#                 "Búsqueda de Modelos:",
-#                 value="",
-#                 placeholder="Escriba el nombre de un modelo...",
-#                 help="Escriba algo para filtrar los modelos."
-#             )
-#         with col2:
-#             sort_direction = st.selectbox(
-#                 "Dirección de Orden:",
-#                 ("Ascendente", "Descendente"),
-#                 index=0
-#             )
-#         with col3:
-#             sort_option = st.selectbox(
-#                 "Ordenar por:",
-#                 ("Alfabéticamente", "Por Tamaño"),
-#                 index=0
-#             )
-
-#         # Filtrar modelos según el término de búsqueda
-#         filtered_models = [
-#             model for model in response_models
-#             if search_query.lower() in model["name"].lower()
-#         ] if search_query else response_models
-
-#         # Determinar si el orden es ascendente o descendente
-#         reverse_order = sort_direction == "Descendente"
-
-#         # Ordenar la lista de modelos según el criterio seleccionado
-#         if sort_option == "Alfabéticamente":
-#             filtered_models = sorted(filtered_models, key=lambda x: x["name"].lower(), reverse=reverse_order)
-#         elif sort_option == "Por Tamaño":
-#             filtered_models = sorted(filtered_models, key=lambda x: x["size"], reverse=reverse_order)
-
-#         if filtered_models:
-#             # Crear un selectbox que muestra detalles adicionales pero selecciona solo el nombre del modelo
-#             formatted_models = [
-#                 f"{model['name']} | Size: {model['size'] / 1_000_000:.2f} MB | Family: {model['family']}"
-#                 for model in filtered_models
-#             ]
-#             selected_index = st.selectbox(
-#                 "Please select the model:",
-#                 range(len(formatted_models)),
-#                 format_func=lambda i: formatted_models[i],
-#             )
-#             st.session_state.selected_model = filtered_models[selected_index]["name"]
-#         else:
-#             st.warning("No models match your search query.")
-#     else:
-#         st.error("No suitable models found for response generation.")
-# else:
-#     st.error("No models found in the response.")
+# def model_selector(modelos):
 
 
 def show_sources(sources):

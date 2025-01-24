@@ -30,9 +30,9 @@ def get_files(directory=DOCUMENTS_PATH):
 
 
 def check_document_exists(document_name, collection_name):
-    print(
-        f"[UPLOAD_SERVICE] Llega con estos valores: dn:{document_name} y cn:{collection_name}"
-    )
+    # print(
+    #     f"[UPLOAD_SERVICE] Llega con estos valores: dn:{document_name} y cn:{collection_name}"
+    # )
 
     try:
         # Obtener la sesión de la base de datos
@@ -61,7 +61,9 @@ def check_document_exists(document_name, collection_name):
         return False
 
 
-def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
+def save_document(
+    file, collection_name: str, save_directory=DOCUMENTS_PATH, physical_path=None
+):
     """
     Guarda un archivo en el sistema de archivos y registra la información en la base de datos.
 
@@ -72,10 +74,10 @@ def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
     :return: Documento registrado en la base de datos o None si ocurre un error.
     """
     db = next(get_db())
-    print(f"[save_document] file: {file.filename}")
-    print(f"[save_document] collection_name: {collection_name}")
-    print(f"[save_document] save_directory: {save_directory}")
-    print(f"[save_document] db: {db}")
+    # print(f"[upload_srv-save_document] file: {file.filename}")
+    # print(f"[upload_srv-save_document] collection_name: {collection_name}")
+    # print(f"[upload_srv-save_document] save_directory: {save_directory}")
+    # print(f"[upload_srv-save_document] db: {db}")
 
     file_path = None
 
@@ -96,6 +98,7 @@ def save_document(file, collection_name: str, save_directory=DOCUMENTS_PATH):
             name=file.filename,
             collection_name=collection_name,
             path=file_path_str,
+            physical_path=physical_path,
             created_at=datetime.now(pytz.timezone(TIME_ZONE)),
             embeddings_uuids=[],
         )

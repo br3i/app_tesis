@@ -97,10 +97,9 @@ def extract_resolution_from_name(document_name):
 def process_pdf(file_path: str, collection_name: str, id_document: int):
     #!!!!!!!!!!!!!!!!!!!!!REVISAR DOCUMENTO 27-2022 -> Error procesando el PDF: list index out of range
     print("\n\n--------------------------[PROCESS_PDF]--------------------------")
-    print("[process_pdf] file_apath: ", file_path)
-    print("[process_pdf] collection_name: ", collection_name)
-    print("[process_pdf] id_document: ", id_document)
-    """ Procesar documentos PDF """
+    # print("[process_pdf] file_apath: ", file_path)
+    # print("[process_pdf] collection_name: ", collection_name)
+    # print("[process_pdf] id_document: ", id_document)
     db = next(get_db())
     try:
         if not os.path.exists(file_path):
@@ -112,6 +111,7 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
             articles_entities,
             copia,
             resolve,
+            resolve_to_embed,
             resolve_page,
         ) = get_info_document(file_path)
         # print(f"\n\n-resolution 1: \n{resolution}")
@@ -139,13 +139,17 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
 
         if resolve is None:
             resolve = ""
+        if resolve_to_embed is None:
+            resolve_to_embed = ""
         documents = [Document(page_content=resolve)]
+        documents_to_embed = [Document(page_content=resolve_to_embed)]
         # print(f"\n\n----------------------------------------------------------")
         # print(f"\n\nDocuments: {documents}")
         ##Generar los chunks a partir del contenido de 'resolve'
         text_chunks = text_splitter.split_documents(documents)
+        text_chunks_to_embed = text_splitter.split_documents(documents_to_embed)
         # print(f"\n\n----------------------------------------------------------")
-        # print(f"\n\nText chunks: {text_chunks}")
+        # print(f"\n\nText text_chunks_to_embed: {text_chunks}")
 
         ##Obtener el nombre de la resolución (de la variable 'resolution' que debes haber definido anteriormente)
         document_name = resolution  # Suponiendo que 'resolution' es la variable que contiene el nombre de la resolución
@@ -174,14 +178,14 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
 
         if number_resolution is not None:
             base_metadata["number_resolution"] = str(number_resolution)
-        print(
-            f"\n\n-------------------------[proc_any_doc_srv]---------------------------------"
-        )
-        print(f"\n\nBase metadata: \n{base_metadata}")
+        # print(
+        #     f"\n\n-------------------------[proc_any_doc_srv]---------------------------------"
+        # )
+        # print(f"\n\nBase metadata: \n{base_metadata}")
         # time.sleep(10000)
 
         # Crear la metadata para los fragmentos de 'resolve'
-        for idx, chunk in enumerate(text_chunks):
+        for idx, chunk in enumerate(text_chunks_to_embed):
             # time.sleep(5)
             try:
                 print(
@@ -200,7 +204,7 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
                     **base_metadata,
                     "uuid": fragment_id,
                     "chunk_index": str(idx),
-                    "text": chunk.page_content,  # Asignamos las consideraciones a la metadata
+                    "text": text_chunks[idx].page_content,
                 }
                 # print(f"\n\n----------------------------------------------------------")
                 # print(f"\n\n[process_resolve_and_articles] Metadata para el fragmento: {document_metadata}")
@@ -216,7 +220,7 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
 
             except Exception as e:
                 print(f"Error procesando el fragmento {idx + 1}: {e}")
-        return len(documents), len(text_chunks)
+        return len(documents), len(text_chunks_to_embed)
     except Exception as e:
         print(f"Error procesando el PDF: {e}")
         return 0, 0
@@ -224,6 +228,7 @@ def process_pdf(file_path: str, collection_name: str, id_document: int):
         db.close()
 
 
+#!!! Adaptar todas a text_chunks_to_embed
 # def process_word_document(file_path: str, collection_name: str):
 #     print("--------------------------[PROCESS_WORD_DOCUMENT]--------------------------")
 #     """ Procesar documentos Word (docx, doc) """

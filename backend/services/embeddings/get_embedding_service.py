@@ -9,6 +9,7 @@ load_dotenv(dotenv_path)
 
 # Ahora puedes acceder a las variables de entorno
 MODEL_EMBEDDING = os.getenv("MODEL_EMBEDDING", "nomic-embed-text:latest")
+print(f"[get_embedding] Model: {MODEL_EMBEDDING}")
 
 
 class EmbeddingError(Exception):

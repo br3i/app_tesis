@@ -1,6 +1,5 @@
 # routes/routes_documents.py
 import time
-import psutil
 import os
 from sqlalchemy.orm import Session
 from models.database import SessionLocal
@@ -48,6 +47,7 @@ async def get_documents_from_db():
             "name": document.name,
             "collection_name": document.collection_name,
             "path": document.path,
+            "physical_path": document.physical_path,
             "created_at": document.created_at.isoformat(),
         }
         for document in documents
@@ -99,7 +99,7 @@ async def document_post(collection_name: str = Form(...), file: UploadFile = Fil
 
         # Si el documento no existe, guardar el archivo
         save_start = time.time()
-        result = save_document(file, collection_name)
+        result = save_document(file, collection_name, physical_path=None)
         if result is None:
             elapsed_time = time.time() - start_time
             final_cpu, final_memory = get_system_usage()

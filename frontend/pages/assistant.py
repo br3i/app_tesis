@@ -1,5 +1,4 @@
 import streamlit as st
-import ollama
 import json
 import requests
 import websocket
@@ -7,6 +6,7 @@ import uuid
 from streamlit_feedback import streamlit_feedback
 from modules.chat.utils.message_generator import message_generator
 from modules.chat.utils.remove_words import remove_word
+from modules.chat.utils.treat_query import treat_query
 
 # from modules.chat.visuals.show_chat_component import model_selector, show_sources
 from modules.chat.visuals.show_chat_component import show_sources
@@ -14,7 +14,6 @@ from modules.chat.utils.random_placeholder import get_placeholder_manager
 from modules.chat.visuals.show_messages import (
     handle_user_input,
     display_history,
-    get_limited_history,
     add_message,
 )
 from modules.settings.utils.load_theme_extra_config import load_theme_extra_config
@@ -214,11 +213,12 @@ except:
 
 if query:
     handle_user_input(query)
+    treated_query = treat_query(query)
 
     with st.spinner("Buscando información relacionada..."):
         json_data = {
             "user_session_uuid": st.session_state.user_session_uuid,
-            "query": query,
+            "query": treated_query,
             "use_considerations": st.session_state.use_considerations,
             "n_documents": st.session_state.n_documents,
             "word_list": st.session_state.word_list,
